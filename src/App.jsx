@@ -8,6 +8,7 @@ import { AdminModal } from './components/ui/AdminModal';
 import { InfoModal } from './components/ui/InfoModal';
 import { createSolanaConnection } from './solana/heliusConnection';
 import { subscribeBondingCurve, subscribeRealtimeTrades, fetchTopHolders, fetchLiveSolPrice, fetchLiveMarketCapSnapshot } from './solana/pumpTracker';
+import { isValidPublicKey } from './solana/bondingCurve';
 import { getProjectSettings, fetchSharedSettings, saveProjectSettings } from './solana/phantomAuth';
 import {
   calculateTotalInches,
@@ -354,7 +355,13 @@ export default function App() {
 
   // Subscribe to live Pump bonding curve updates, trades & holders (Restarts on CA change)
   useEffect(() => {
-    if (!settings.mintAddress) return;
+    const rawMint = settings.mintAddress ? settings.mintAddress.trim() : '';
+    if (!rawMint || !isValidPublicKey(rawMint)) {
+      setNpcs((prev) => (prev.length === 0 ? INITIAL_DEMO_NPCS : prev));
+      setTrades((prev) => (prev.length === 0 ? INITIAL_TRADES : prev));
+      setHolders((prev) => (prev.length === 0 ? INITIAL_HOLDERS : prev));
+      return;
+    }
 
     // Clear previous trades, holders & hoppers on CA switch
     setTrades([]);
@@ -362,7 +369,7 @@ export default function App() {
     setNpcs([]);
 
     // Instant snapshot for immediate UI feedback (< 50ms) on CA switch
-    fetchLiveMarketCapSnapshot(settings.mintAddress, solUsdPriceRef.current).then((snap) => {
+    fetchLiveMarketCapSnapshot(rawMint, solUsdPriceRef.current).then((snap) => {
       if (snap) {
         setMarketCapData((prev) => ({ ...prev, ...snap }));
       }
