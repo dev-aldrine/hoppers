@@ -1,17 +1,17 @@
 {
   "adminWallet": "3Pxv5rZVxFoBBFf57yE6opeyqqNbDWBGnB4TzvFBQwDN",
-  "mintAddress": "",
+  "mintAddress": "HcEfPDUGUaNbsb318rZRiFi7PnxWXbBEa4DAHgTgpump",
   "heliusApiKey": "",
-  "solUsdPrice": 119.5,
+  "solUsdPrice": 119.1,
   "minSpawnSol": 0.01,
   "telegramUrl": "",
   "twitterUrl": "https://x.com/DickHoppers_sol",
   "tokenSymbol": "$DICK",
   "tokenName": "DICK COIN",
   "prizePoolEnabled": true,
-  "prizePoolSol": 5.0,
+  "prizePoolSol": 5,
   "prizePoolHeadline": "Top 10 biggest dicks wins!",
-  "prizePoolTargetInches": 69.0,
+  "prizePoolTargetInches": 69,
   "growthRateInchesPerMin": 1.5,
   "prizePoolDistribution": [
     40,
@@ -20,6 +20,27 @@
     12,
     8
   ],
-  "prizePoolWinners": [],
-  "updatedAt": 1
+  "prizePoolWinners": [
+    {
+      "id": "npc-starter-1",
+      "wallet": "9zPq...4kLm",
+      "fullWallet": "9zPqR5StUvWxYzAbCdEfGhIjKlMnOpQrStUv4kLm",
+      "rank": 1,
+      "prizeSol": "2.00",
+      "percentage": 40,
+      "inches": 69.35650902938004,
+      "wonAt": 1790623236458
+    },
+    {
+      "id": "npc-starter-2",
+      "wallet": "4xKd...8aB9",
+      "fullWallet": "4xKdEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIj8aB9",
+      "rank": 2,
+      "prizeSol": "1.25",
+      "percentage": 25,
+      "inches": 85.75269701155344,
+      "wonAt": 1790623236481
+    }
+  ],
+  "updatedAt": 1790623358038
 }

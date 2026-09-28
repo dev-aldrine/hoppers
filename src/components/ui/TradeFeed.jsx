@@ -110,8 +110,10 @@ export function TradeFeed({
 
       <div className="trade-list custom-scrollbar">
         {filteredHoppers.length === 0 ? (
-          <div className="empty-trades" style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-            {searchQuery ? 'No dicks match your search' : 'Waiting for hoppers to join the arena...'}
+          <div className="empty-trades" style={{ padding: '32px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.6rem' }}>⏳</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{searchQuery ? 'No hoppers match your search' : 'Waiting for first buy on Pump.fun...'}</span>
+            <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>Buy tokens to spawn your 3D Hopper into the arena!</span>
           </div>
         ) : (
           filteredHoppers.slice(0, 20).map((hopper, idx) => {

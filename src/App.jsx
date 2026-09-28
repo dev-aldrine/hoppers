@@ -19,74 +19,10 @@ import {
 } from './solana/growthMechanics';
 import { soundManager } from './audio/soundEffects';
 
-// Initial starter dummy NPCs with realistic staggered timestamps
-const INITIAL_DEMO_NPCS = [
-  {
-    id: 'npc-starter-1',
-    wallet: '9zPq...4kLm',
-    fullWallet: '9zPqR5StUvWxYzAbCdEfGhIjKlMnOpQrStUv4kLm',
-    solAmount: 0.25,
-    skinIndex: 0,
-    initialPosition: [-5, 0, -4],
-    spawnTimestamp: Date.now() - 1000 * 60 * 18, // 18m ago
-    bonusMinutes: 0,
-  },
-  {
-    id: 'npc-starter-2',
-    wallet: '4xKd...8aB9',
-    fullWallet: '4xKdEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIj8aB9',
-    solAmount: 2.5,
-    skinIndex: 6, // Diamond blue
-    initialPosition: [6, 0, -3],
-    spawnTimestamp: Date.now() - 1000 * 60 * 22, // 22m ago
-    bonusMinutes: 0,
-  },
-  {
-    id: 'npc-starter-3',
-    wallet: '6vYn...1cDs',
-    fullWallet: '6vYnAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEf1cDs',
-    solAmount: 12.5, // Gigachad Whale!
-    skinIndex: 5, // 24k Gold
-    initialPosition: [0, 0, 5],
-    spawnTimestamp: Date.now() - 1000 * 60 * 12, // 12m ago
-    bonusMinutes: 0,
-  },
-  {
-    id: 'npc-starter-4',
-    wallet: '3mTk...7pWq',
-    fullWallet: '3mTkUvWxYzAbCdEfGhIjKlMnOpQrStUvWxYz7pWq',
-    solAmount: 0.05,
-    skinIndex: 2,
-    initialPosition: [-7, 0, 6],
-    spawnTimestamp: Date.now() - 1000 * 60 * 6, // 6m ago
-    bonusMinutes: 0,
-  },
-  {
-    id: 'npc-starter-5',
-    wallet: '2wRt...9mNb',
-    fullWallet: '2wRtAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEf9mNb',
-    solAmount: 6.2,
-    skinIndex: 7, // Neon Pink
-    initialPosition: [7, 0, 4],
-    spawnTimestamp: Date.now() - 1000 * 60 * 15, // 15m ago
-    bonusMinutes: 0,
-  },
-];
-
-const INITIAL_TRADES = [
-  { id: 't-1', wallet: '6vYn...1cDs', solAmount: 12.5, usdValue: '1,937', timeAgo: '1m ago' },
-  { id: 't-2', wallet: '2wRt...9mNb', solAmount: 6.2, usdValue: '961', timeAgo: '3m ago' },
-  { id: 't-3', wallet: '4xKd...8aB9', solAmount: 2.5, usdValue: '387', timeAgo: '5m ago' },
-  { id: 't-4', wallet: '9zPq...4kLm', solAmount: 0.25, usdValue: '38', timeAgo: '8m ago' },
-];
-
-const INITIAL_HOLDERS = [
-  { id: 'h-1', address: '6vYn...1cDs', percentage: 7.85, solValue: 27.4, tier: '👑 WHALE KING' },
-  { id: 'h-2', address: '2wRt...9mNb', percentage: 4.20, solValue: 14.7, tier: '🌟 GIGA CHAD' },
-  { id: 'h-3', address: '4xKd...8aB9', percentage: 2.95, solValue: 10.3, tier: '🌟 GIGA CHAD' },
-  { id: 'h-4', address: '9zPq...4kLm', percentage: 1.60, solValue: 5.6, tier: '💎 DIAMOND' },
-  { id: 'h-5', address: '3mTk...7pWq', percentage: 0.85, solValue: 2.9, tier: '💎 DIAMOND' },
-];
+// Clean initial states
+const INITIAL_DEMO_NPCS = [];
+const INITIAL_TRADES = [];
+const INITIAL_HOLDERS = [];
 
 export default function App() {
   const [settings, setSettings] = useState(getProjectSettings());
@@ -111,11 +47,11 @@ export default function App() {
   const crownScale = 0.0090;
 
   const [marketCapData, setMarketCapData] = useState({
-    mcapUsd: 8232,
-    mcapSol: 69.1,
-    priceInSol: 0.000000069,
-    migrationProgress: 20.2,
-    solUsdPrice: settings.solUsdPrice || 119.1,
+    mcapUsd: 0,
+    mcapSol: 0,
+    priceInSol: 0,
+    migrationProgress: 0,
+    solUsdPrice: settings.solUsdPrice || 155,
   });
 
   const [selectedNpc, setSelectedNpc] = useState(null);
@@ -357,9 +293,16 @@ export default function App() {
   useEffect(() => {
     const rawMint = settings.mintAddress ? settings.mintAddress.trim() : '';
     if (!rawMint || !isValidPublicKey(rawMint)) {
-      setNpcs((prev) => (prev.length === 0 ? INITIAL_DEMO_NPCS : prev));
-      setTrades((prev) => (prev.length === 0 ? INITIAL_TRADES : prev));
-      setHolders((prev) => (prev.length === 0 ? INITIAL_HOLDERS : prev));
+      setNpcs([]);
+      setTrades([]);
+      setHolders([]);
+      setMarketCapData({
+        mcapUsd: 0,
+        mcapSol: 0,
+        priceInSol: 0,
+        migrationProgress: 0,
+        solUsdPrice: solUsdPriceRef.current || 155,
+      });
       return;
     }
 
