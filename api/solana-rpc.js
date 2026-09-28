@@ -13,12 +13,19 @@ export default async function handler(req, res) {
   }
 
   const targets = [
-    'https://api.mainnet-beta.solana.com',
     'https://rpc.ankr.com/solana',
     'https://1rpc.io/sol',
+    'https://api.mainnet-beta.solana.com',
   ];
 
-  const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+  let body = '';
+  if (typeof req.body === 'object' && req.body !== null) {
+    body = JSON.stringify(req.body);
+  } else if (typeof req.body === 'string') {
+    body = req.body;
+  } else {
+    body = JSON.stringify(req.body || {});
+  }
 
   for (const target of targets) {
     try {
