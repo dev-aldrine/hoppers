@@ -7,12 +7,12 @@ const BROADCAST_KEY = 'dickcoin_broadcast_channel';
 // Fallback / Initial Demo settings
 export const DEFAULT_SETTINGS = {
   adminWallet: '3Pxv5rZVxFoBBFf57yE6opeyqqNbDWBGnB4TzvFBQwDN',
-  mintAddress: 'DICKpump11111111111111111111111111111111111',
+  mintAddress: '',
   heliusApiKey: '',
   solUsdPrice: 155,
   minSpawnSol: 0.01,
-  telegramUrl: 'https://t.me/dickcoin_pump',
-  twitterUrl: 'https://x.com/dickcoin_sol',
+  telegramUrl: '',
+  twitterUrl: 'https://x.com/DickHoppers_sol',
   tokenSymbol: '$DICK',
   tokenName: 'DICK COIN',
   prizePoolEnabled: true,
@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS = {
   growthRateInchesPerMin: 1.5,
   prizePoolDistribution: [40, 25, 15, 12, 8],
   prizePoolWinners: [],
+  updatedAt: 0,
 };
 
 export function getProjectSettings() {
@@ -32,33 +33,59 @@ export function getProjectSettings() {
   return DEFAULT_SETTINGS;
 }
 
-// Fetch shared global settings from server/public settings.json
+// Fetch shared global settings with strict timestamp precedence (Never overwrites newer local changes)
 export async function fetchSharedSettings() {
-  const urls = ['/settings.json', '/api/settings'];
-  for (const url of urls) {
-    try {
-      const res = await fetch(`${url}?_t=${Date.now()}`);
-      if (res.ok) {
-        const remote = await res.json();
-        if (remote && remote.mintAddress) {
-          const merged = { ...DEFAULT_SETTINGS, ...remote };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-          return merged;
-        }
+  const localSettings = getProjectSettings();
+  const localUpdatedAt = Number(localSettings?.updatedAt) || 0;
+
+  // 1. Try dynamic serverless API first
+  try {
+    const res = await fetch(`/api/settings?_t=${Date.now()}`);
+    if (res.ok) {
+      const remote = await res.json();
+      const remoteUpdatedAt = Number(remote?.updatedAt) || 0;
+      if (remote && remoteUpdatedAt > localUpdatedAt) {
+        const merged = { ...DEFAULT_SETTINGS, ...remote, updatedAt: remoteUpdatedAt };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        return merged;
       }
-    } catch (e) {}
+    }
+  } catch (e) {}
+
+  // 2. If user already modified/saved local settings, NEVER overwrite with initial static build file!
+  if (localUpdatedAt > 0) {
+    return localSettings;
   }
-  return getProjectSettings();
+
+  // 3. Initial first-time load only if localStorage has never been saved
+  try {
+    const res = await fetch(`/settings.json?_t=${Date.now()}`);
+    if (res.ok) {
+      const initialJson = await res.json();
+      if (initialJson) {
+        const merged = { ...DEFAULT_SETTINGS, ...initialJson, updatedAt: 1 };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        return merged;
+      }
+    }
+  } catch (e) {}
+
+  return localSettings;
 }
 
 // Save project settings globally to server and local storage
 export async function saveProjectSettings(settings) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    const updatedSettings = {
+      ...settings,
+      updatedAt: Date.now(),
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
 
     if (typeof BroadcastChannel !== 'undefined') {
       const channel = new BroadcastChannel(BROADCAST_KEY);
-      channel.postMessage({ type: 'SETTINGS_UPDATE', payload: settings });
+      channel.postMessage({ type: 'SETTINGS_UPDATE', payload: updatedSettings });
       channel.close();
     }
 
@@ -67,7 +94,7 @@ export async function saveProjectSettings(settings) {
       await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        body: JSON.stringify(updatedSettings),
       });
     } catch (apiErr) {
       console.warn('Server settings persistence warning:', apiErr);

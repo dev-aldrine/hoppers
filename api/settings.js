@@ -17,7 +17,10 @@ export default function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const data = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-      memorySettings = data;
+      memorySettings = {
+        ...data,
+        updatedAt: data.updatedAt || Date.now(),
+      };
       return res.status(200).json({ success: true, settings: memorySettings });
     } catch (e) {
       return res.status(400).json({ error: e.message });
