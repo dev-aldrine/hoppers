@@ -1,0 +1,75 @@
+{
+  "adminWallet": "3Pxv5rZVxFoBBFf57yE6opeyqqNbDWBGnB4TzvFBQwDN",
+  "mintAddress": "CJqg1CXuBAETr7mAJuuM7vf7bJsTWmmy4SuzLGsnpump",
+  "heliusApiKey": "aac38acb-66a6-4494-870e-8bb5c14c051a",
+  "solUsdPrice": 119.47,
+  "minSpawnSol": 0.1,
+  "telegramUrl": "https://t.me/dickhoppers",
+  "twitterUrl": "https://x.com/DickHoppers_sol",
+  "tokenSymbol": "$DICK",
+  "tokenName": "DICK COIN",
+  "prizePoolEnabled": true,
+  "prizePoolSol": 2,
+  "prizePoolHeadline": "Top 10 biggest dicks wins!",
+  "prizePoolTargetInches": 69,
+  "growthRateInchesPerMin": 1.5,
+  "prizePoolDistribution": [
+    40,
+    25,
+    15,
+    12,
+    8
+  ],
+  "prizePoolWinners": [
+    {
+      "id": "npc-starter-2",
+      "wallet": "4xKd...8aB9",
+      "fullWallet": "4xKdEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIj8aB9",
+      "rank": 1,
+      "prizeSol": "2.00",
+      "percentage": 40,
+      "inches": 77.3053118281588,
+      "wonAt": 1790608829335
+    },
+    {
+      "id": "npc-starter-3",
+      "wallet": "6vYn...1cDs",
+      "fullWallet": "6vYnAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEf1cDs",
+      "rank": 2,
+      "prizeSol": "1.25",
+      "percentage": 25,
+      "inches": 76.17518432984932,
+      "wonAt": 1790608829336
+    },
+    {
+      "id": "npc-starter-5",
+      "wallet": "2wRt...9mNb",
+      "fullWallet": "2wRtAbCdEfGhIjKlMnOpQrStUvWxYzAbCdEf9mNb",
+      "rank": 3,
+      "prizeSol": "0.75",
+      "percentage": 15,
+      "inches": 74.49741554268392,
+      "wonAt": 1790608829336
+    },
+    {
+      "id": "npc-ardinRsN1mNYVeoJWTBsWeYeXvuR9UUDGMsCDKpb6AT",
+      "wallet": "ardi...b6AT",
+      "fullWallet": "ardinRsN1mNYVeoJWTBsWeYeXvuR9UUDGMsCDKpb6AT",
+      "rank": 4,
+      "prizeSol": "0.60",
+      "percentage": 12,
+      "inches": 262.8256762568049,
+      "wonAt": 1790609664705
+    },
+    {
+      "id": "npc-A82ANpTtgWhznL1G5wWdcfph8cWHhdQ6HVrjg43fhYBM",
+      "wallet": "A82A...hYBM",
+      "fullWallet": "A82ANpTtgWhznL1G5wWdcfph8cWHhdQ6HVrjg43fhYBM",
+      "rank": 5,
+      "prizeSol": "0.40",
+      "percentage": 8,
+      "inches": 248.60994595924288,
+      "wonAt": 1790609664715
+    }
+  ]
+}
