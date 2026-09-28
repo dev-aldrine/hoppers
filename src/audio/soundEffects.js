@@ -23,7 +23,9 @@ class SoundEffectsManager {
   initBgm(src = '/bgm.mp3') {
     if (typeof window === 'undefined') return;
     if (!this.bgmAudio) {
-      this.bgmAudio = new Audio(src);
+      this.bgmAudio = new Audio();
+      this.bgmAudio.preload = 'none';
+      this.bgmAudio.src = src;
       this.bgmAudio.loop = true;
       this.bgmAudio.volume = 0.35;
     }
