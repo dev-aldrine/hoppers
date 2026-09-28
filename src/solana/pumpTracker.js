@@ -141,23 +141,25 @@ export function subscribeBondingCurve(
   let subId = null;
   let pollInterval = null;
 
-  // 3. Real-time sub-second WebSocket listener (< 200ms push updates, 0 HTTP requests)
+  // 3. Real-time sub-second WebSocket listener (Only if dedicated WS is available)
   if (pda) {
-    try {
-      subId = connection.onAccountChange(
-        pda,
-        (accountInfo) => {
-          if (!isSubscribed) return;
-          if (accountInfo?.data) {
-            const decoded = decodeBondingCurveData(accountInfo.data, getSolPrice());
-            if (decoded) {
-              onUpdate(decoded);
+    if (hasDedicatedWs) {
+      try {
+        subId = connection.onAccountChange(
+          pda,
+          (accountInfo) => {
+            if (!isSubscribed) return;
+            if (accountInfo?.data) {
+              const decoded = decodeBondingCurveData(accountInfo.data, getSolPrice());
+              if (decoded) {
+                onUpdate(decoded);
+              }
             }
-          }
-        },
-        'processed'
-      );
-    } catch (e) {}
+          },
+          'processed'
+        );
+      } catch (e) {}
+    }
 
     // Passive heartbeat sync polling (every 15s)
     pollInterval = setInterval(fetchOnChain, 15000);

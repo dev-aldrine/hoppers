@@ -1,15 +1,14 @@
 import { Connection } from '@solana/web3.js';
 
-// Free high-reliability CORS-enabled public RPC endpoints for fallback
 export const PUBLIC_FALLBACK_RPCS = [
   'https://api.mainnet-beta.solana.com',
   'https://rpc.ankr.com/solana',
-  'https://solana-rpc.publicnode.com',
+  'https://1rpc.io/sol',
 ];
 
 export function createSolanaConnection(heliusApiKey = null) {
   const hasKey = Boolean(heliusApiKey && heliusApiKey.trim());
-  let rpcUrl = 'https://solana-rpc.publicnode.com';
+  let rpcUrl = 'https://api.mainnet-beta.solana.com';
 
   if (hasKey) {
     const cleanKey = heliusApiKey.trim();
@@ -23,7 +22,7 @@ export function createSolanaConnection(heliusApiKey = null) {
 
   return new Connection(rpcUrl, {
     commitment: 'confirmed',
-    disableRetryOnRateLimit: false,
+    disableRetryOnRateLimit: true,
   });
 }
 

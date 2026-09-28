@@ -13,8 +13,8 @@ export default async function handler(req, res) {
   }
 
   const targets = [
-    'https://solana-rpc.publicnode.com',
     'https://api.mainnet-beta.solana.com',
+    'https://rpc.ankr.com/solana',
     'https://1rpc.io/sol',
   ];
 

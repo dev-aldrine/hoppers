@@ -641,6 +641,7 @@ body, html {
 }
 
 .leaderboard-title-row {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -650,6 +651,8 @@ body, html {
 }
 
 .leaderboard-title-row h3 {
+  margin: 0 auto;
+  text-align: center;
   font-family: 'Fredoka', 'Titan One', 'Outfit', sans-serif;
   font-size: 1.15rem;
   font-weight: 900;
@@ -2432,6 +2435,10 @@ body, html {
 }
 
 .leaderboard-collapse-btn {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.15);
   color: #ffffff;
@@ -2442,7 +2449,6 @@ body, html {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  margin-left: auto;
   transition: all 0.2s ease;
 }
 

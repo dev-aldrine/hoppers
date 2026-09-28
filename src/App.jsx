@@ -449,7 +449,7 @@ export default function App() {
     };
 
     updateHolders();
-    const holderInterval = setInterval(updateHolders, 10000);
+    const holderInterval = setInterval(updateHolders, 25000);
 
     return () => {
       if (unsubscribeCurve) unsubscribeCurve();
