@@ -34,7 +34,7 @@ export function getProjectSettings() {
 
 // Fetch shared global settings from server/public settings.json
 export async function fetchSharedSettings() {
-  const urls = ['/api/settings', '/settings.json'];
+  const urls = ['/settings.json', '/api/settings'];
   for (const url of urls) {
     try {
       const res = await fetch(`${url}?_t=${Date.now()}`);
