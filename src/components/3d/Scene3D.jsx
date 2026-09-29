@@ -334,9 +334,9 @@ export function Scene3D({
             const headPeakLocalY = HEAD_BASE_Y + SHAFT_HEIGHT * (monumentShaftScale - 1) + 0.12;
             const headTopWorldY = groundOffset + headPeakLocalY * monumentOverallScale;
 
-            // 🎯 Anchor Market Cap directly on top of the center dick head at all times (lowered 10% closer)
+            // 🎯 Anchor Market Cap directly on top of the center dick (lowered by 40%)
             const sc = mcapScale !== undefined ? mcapScale : 0.95;
-            const marketCapPos = [0, headTopWorldY + 0.8, 0];
+            const marketCapPos = [0, (headTopWorldY + 0.8) * 0.60, 0];
             const marketCapRot = [0.0, 0.0, 0.0];
             const marketCapScale = sc;
 
