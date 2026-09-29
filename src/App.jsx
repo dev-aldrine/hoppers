@@ -40,11 +40,16 @@ export default function App() {
   const rainbowRotation = [1.57, 0.17, -0.7];
   const rainbowRadius = 33.0;
 
-  // Locked Tag & Crown Offsets
+  // Locked Tag Offsets
   const tagOffsetY = -0.26;
   const tagScale = 1.60;
-  const crownOffsetY = -0.18;
-  const crownScale = 0.0090;
+
+  // 🎯 Locked Market Cap Pivot Offsets (Anchored to Center Dick Midpoint)
+  const mcapDistance = 6.6;
+  const mcapOrbitAngle = -1.50;
+  const mcapHeightOffset = -1.0;
+  const mcapFacingAngle = 0.10;
+  const mcapScale = 0.95;
 
   const [marketCapData, setMarketCapData] = useState({
     mcapUsd: 0,
@@ -56,6 +61,7 @@ export default function App() {
 
   const [selectedNpc, setSelectedNpc] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   // 🧭 Slug Routing & Admin Modal State
   const [currentSlug, setCurrentSlug] = useState(() => {
@@ -69,11 +75,6 @@ export default function App() {
   const [isSecretUnlocked, setIsSecretUnlocked] = useState(() => {
     return localStorage.getItem('secret_admin_unlocked') === 'true';
   });
-  const [isPrizeCollapsed, setIsPrizeCollapsed] = useState(() => {
-    return typeof window !== 'undefined' && window.innerWidth <= 768;
-  });
-  // ℹ️ Open Info / About modal by default on initial site launch
-  const [isInfoOpen, setIsInfoOpen] = useState(true);
 
   // 🎵 Background Audio Auto-play on user gesture / mount
   useEffect(() => {
@@ -101,16 +102,6 @@ export default function App() {
     const nextMuted = soundManager.toggleMute();
     setIsMuted(nextMuted);
   };
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth <= 768) {
-        setIsPrizeCollapsed(true);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     const handleLocationChange = () => {
@@ -594,13 +585,17 @@ export default function App() {
         npcs={enrichedNpcs}
         selectedNpcId={selectedNpc?.id || null}
         onSelectNpc={(npc) => setSelectedNpc(npc)}
+        marketCap={marketCapData?.mcapUsd ?? 0}
+        mcapDistance={mcapDistance}
+        mcapOrbitAngle={mcapOrbitAngle}
+        mcapHeightOffset={mcapHeightOffset}
+        mcapFacingAngle={mcapFacingAngle}
+        mcapScale={mcapScale}
         arenaRadius={28}
         overallScale={overallScale}
         groundOffset={groundOffset}
         tagOffsetY={tagOffsetY}
         tagScale={tagScale}
-        crownOffsetY={crownOffsetY}
-        crownScale={crownScale}
         sunPosition={sunPosition}
         sunRotation={sunRotation}
         sunScale={sunScale}
@@ -609,58 +604,14 @@ export default function App() {
         rainbowRadius={rainbowRadius}
       />
 
-      {/* 💰 Top Center Floating Pure Text Market Cap with Smooth Counter */}
-      <div className="top-center-mcap-display">
-        <div className="mcap-hero-val">
-          <span className="mcap-hero-dollar">$</span>
-          <Counter
-            value={Math.round(marketCapData?.mcapUsd ?? 0)}
-            fontSize={56}
-            padding={0}
-            gap={1}
-            textColor="#ffffff"
-            fontWeight={900}
-            counterStyle={{
-              fontFamily: "'Fredoka', 'Titan One', 'Outfit', sans-serif",
-              letterSpacing: '-0.02em',
-            }}
-          />
-        </div>
-        <div className="mcap-hero-subtitle">
-          MC
-        </div>
+      {/* 🌟 Top Center Rebranded GROWERS Logo */}
+      <div className="top-center-brand-logo">
+        <img
+          src="/growers_logo.png"
+          alt="GROWERS"
+          className="brand-logo-img"
+        />
       </div>
-
-      {/* 🏆 Top Right Pulsing Prize Pool Widget (Admin Configurable & Mobile Collapsible) */}
-      {settings.prizePoolEnabled !== false && (
-        <div
-          className={`top-right-prize-badge ${isPrizeCollapsed ? 'mobile-collapsed' : ''}`}
-          onClick={() => setIsPrizeCollapsed((prev) => !prev)}
-          title="Tap to toggle Prize Pool details"
-        >
-          <div className="prize-amount-row">
-            <span className="prize-trophy">🏆</span>
-            <span className="prize-amount-text">
-              {settings.prizePoolSol ?? 5.0} SOL {isPrizeCollapsed ? '' : 'PRIZE POOL'}
-            </span>
-            {isPrizeCollapsed && (
-              <span className="prize-timer-val font-mono compact">{formattedTimer}</span>
-            )}
-          </div>
-          {!isPrizeCollapsed && (
-            <>
-              <div className="prize-headline-text">
-                {settings.prizePoolHeadline || 'Top 10 biggest dicks wins!'}
-              </div>
-              <div className="prize-timer-row">
-                <span className="prize-timer-icon">⏱️</span>
-                <span className="prize-timer-label">Ends in</span>
-                <span className="prize-timer-val font-mono">{formattedTimer}</span>
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
       {/* UI Widgets Overlay */}
       <div className="ui-overlay">
@@ -689,17 +640,17 @@ export default function App() {
         </div>
       )}
 
-      {/* 🚀 Floating Bottom Center Dock (CA + Copy, X, Telegram, Pump.fun, Mute, Info, Admin) */}
+      {/* 🚀 Floating Bottom Center Dock (CA + Copy, X, Telegram, Pump.fun, About, Mute, Admin) */}
       <BottomDock
         settings={settings}
-        onOpenInfo={() => setIsInfoOpen(true)}
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
+        onOpenAbout={() => setIsAboutOpen(true)}
       />
 
-      {/* ℹ️ How It Works & Token Mechanics Modal */}
-      {isInfoOpen && (
-        <InfoModal onClose={() => setIsInfoOpen(false)} />
+      {/* ℹ️ How It Works / About Modal */}
+      {isAboutOpen && (
+        <InfoModal onClose={() => setIsAboutOpen(false)} />
       )}
 
       {/* 🔐 Admin Control Modal (Phantom Gated on /pukinginamo slug or 'y' shortcut) */}

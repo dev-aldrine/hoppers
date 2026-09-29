@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 import { calculateTotalInches, formatInches, formatMm } from '../../solana/growthMechanics';
-import GooeyInput from './GooeyInput';
 
 export function TradeFeed({
   npcs = [],
@@ -24,32 +23,18 @@ export function TradeFeed({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Live ticker to update millimeter and inch values in real time every 500ms
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTick((t) => (t + 1) % 1000000);
-    }, 500);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Sort active hoppers dynamically by total current length
+  // Sort active hoppers dynamically by length
   const sortedHoppers = useMemo(() => {
     return [...npcs]
       .map((npc) => {
-        const totalInches = calculateTotalInches(
-          npc.solAmount,
-          npc.spawnTimestamp,
-          undefined,
-          npc.bonusMinutes || 0
-        );
+        const totalInches = calculateTotalInches(npc.solAmount);
         return {
           ...npc,
           totalInches,
         };
       })
       .sort((a, b) => b.totalInches - a.totalInches);
-  }, [npcs, Date.now()]);
+  }, [npcs]);
 
   // Filter hoppers based on search input
   const filteredHoppers = useMemo(() => {
@@ -63,63 +48,83 @@ export function TradeFeed({
     });
   }, [sortedHoppers, searchQuery]);
 
-  // Collapsed Mobile floating toggle pill
+  // Collapsed Mobile floating toggle pill (Neo-brutalist)
   if (isCollapsed) {
     return (
       <div
-        className="mobile-leaderboard-pill glass-panel"
+        className="neo-mobile-pill"
         onClick={() => setIsCollapsed(false)}
-        title="Tap to open Leaderboard"
+        title="Tap to open Growers' List"
       >
-        <span className="mobile-pill-icon">🍆</span>
-        <span className="mobile-pill-title">Leaderboard</span>
-        <span className="mobile-pill-count">({sortedHoppers.length})</span>
-        <ChevronDown size={16} className="mobile-pill-arrow" />
+        <span className="neo-pill-badge">LIST</span>
+        <span className="neo-pill-title">GROWERS' LIST</span>
+        <span className="neo-pill-count">{sortedHoppers.length}</span>
+        <ChevronDown size={18} strokeWidth={3} className="neo-pill-arrow" />
       </div>
     );
   }
 
   return (
-    <div className="trade-feed-card glass-panel">
-      <div className="card-header leaderboard-card-header">
-        <div className="leaderboard-logo-row">
-          <img
-            src="/dickhoppers_logo.png"
-            alt="DickHoppers"
-            className="leaderboard-logo-img"
-          />
-        </div>
-        <div className="leaderboard-title-row">
-          <h3>Leaderboard</h3>
-          <button
-            className="leaderboard-collapse-btn"
-            onClick={() => setIsCollapsed(true)}
-            title="Collapse leaderboard"
-          >
-            <ChevronUp size={18} />
-          </button>
+    <div className="neo-growers-container">
+      {/* 🏷️ Neo-brutalist Header Bar */}
+      <div className="neo-growers-header">
+        <div className="neo-header-top">
+          <div className="neo-title-group">
+            <h3 className="neo-header-title">GROWERS' LIST</h3>
+            <span className="neo-live-tag">LIVE</span>
+          </div>
+          <div className="neo-actions-group">
+            <span className="neo-count-badge">{sortedHoppers.length}</span>
+            <button
+              className="neo-collapse-btn"
+              onClick={() => setIsCollapsed(true)}
+              title="Collapse Growers' List"
+            >
+              <ChevronUp size={18} strokeWidth={3} />
+            </button>
+          </div>
         </div>
 
-        {/* 🔍 Gooey Spring Search Input */}
-        <GooeyInput
-          placeholder="Search your dick"
-          value={searchQuery}
-          onValueChange={setSearchQuery}
-        />
+        {/* 🔍 Neo-brutalist Search Box */}
+        <div className="neo-search-wrap">
+          <Search size={16} strokeWidth={3} className="neo-search-icon" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="SEARCH WALLET..."
+            className="neo-search-input"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="neo-search-clear"
+              onClick={() => setSearchQuery('')}
+              title="Clear search"
+            >
+              <X size={15} strokeWidth={3} />
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="trade-list custom-scrollbar">
+      {/* 📋 Scrollable Growers List */}
+      <div className="neo-growers-list custom-scrollbar">
         {filteredHoppers.length === 0 ? (
-          <div className="empty-trades" style={{ padding: '32px 14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.6rem' }}>⏳</span>
-            <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{searchQuery ? 'No hoppers match your search' : 'Waiting for first buy on Pump.fun...'}</span>
-            <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>Buy tokens to spawn your 3D Hopper into the arena!</span>
+          <div className="neo-empty-state">
+            <div className="neo-empty-icon">⏳</div>
+            <span className="neo-empty-title">
+              {searchQuery ? 'NO MATCHES FOUND' : 'WAITING FOR BUYERS...'}
+            </span>
+            <span className="neo-empty-sub">
+              BUY ON PUMP.FUN TO SPAWN IN ARENA!
+            </span>
           </div>
         ) : (
-          filteredHoppers.slice(0, 20).map((hopper, idx) => {
+          filteredHoppers.slice(0, 30).map((hopper, idx) => {
             const sol = Number(hopper.solAmount) || 0.01;
-            const isWhale = sol >= 2.0;
-            const isMega = sol >= 5.0;
             const isSelected =
               Boolean(selectedNpcId) &&
               (selectedNpcId === hopper.id ||
@@ -128,51 +133,44 @@ export function TradeFeed({
             const inchesStr = formatInches(hopper.totalInches);
             const mmStr = formatMm(hopper.totalInches);
 
+            // Neo-brutalist Rank Tiers
+            const rankNum = idx + 1;
+            const rankClass =
+              rankNum === 1 ? 'neo-rank-1' : rankNum === 2 ? 'neo-rank-2' : rankNum === 3 ? 'neo-rank-3' : 'neo-rank-std';
+
             return (
               <div
                 key={hopper.id || idx}
-                className={`trade-row ${isSelected ? 'selected-hopper-row' : ''} ${
-                  isMega ? 'mega-whale-trade' : isWhale ? 'whale-trade' : ''
-                }`}
+                className={`neo-row ${rankClass} ${isSelected ? 'neo-selected-row' : ''}`}
                 onClick={() => {
                   if (onSelectNpc) {
                     onSelectNpc(isSelected ? null : hopper);
                   }
                 }}
-                title={isSelected ? "Click to unfocus camera" : "Click to focus camera on this hopper's head"}
+                title={isSelected ? 'Click to unfocus camera' : 'Click to focus camera on this hopper'}
               >
-                <div className="holder-rank-badge">
-                  {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
+                {/* 1. Rank Box */}
+                <div className="neo-rank-badge">
+                  #{rankNum}
                 </div>
 
-                <div className="trade-info">
-                  <div className="trade-wallet-row">
-                    <span className="trade-wallet font-mono font-bold">{hopper.wallet}</span>
+                {/* 2. Wallet & Volume */}
+                <div className="neo-row-main">
+                  <div className="neo-wallet-row">
+                    <span className="neo-wallet-text">{hopper.wallet}</span>
                     {hopper.percentage ? (
-                      <span className="holder-badge-tier">{hopper.percentage.toFixed(1)}%</span>
+                      <span className="neo-tier-badge">{hopper.percentage.toFixed(1)}%</span>
                     ) : null}
                   </div>
-                  <div className="trade-sub-row">
-                    <span className="trade-buy font-mono text-neon-cyan">+{sol.toFixed(2)} SOL</span>
-                    {isMega ? (
-                      <span className="trade-usd font-bold text-gold">👑 WHALE</span>
-                    ) : isWhale ? (
-                      <span className="trade-usd font-bold text-neon-cyan">🌟 CHAD</span>
-                    ) : null}
+                  <div className="neo-buy-row">
+                    <span className="neo-sol-badge">+{sol.toFixed(2)} SOL</span>
                   </div>
                 </div>
 
-                <div className="trade-amount">
-                  <span
-                    className="size-badge font-mono font-bold"
-                    style={{
-                      color: '#39ff14',
-                      textShadow: '0 0 10px rgba(57, 255, 20, 0.45)',
-                      letterSpacing: '0.02em',
-                    }}
-                  >
-                    🍆 {inchesStr} <span className="cm-sub" style={{ color: '#39ff14', opacity: 0.9 }}>({mmStr})</span>
-                  </span>
+                {/* 3. Measurement (Inches & MM) */}
+                <div className="neo-size-box">
+                  <span className="neo-inches-text">{inchesStr}</span>
+                  <span className="neo-mm-text">{mmStr}</span>
                 </div>
               </div>
             );

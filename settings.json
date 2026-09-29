@@ -1,11 +1,11 @@
 {
   "adminWallet": "3Pxv5rZVxFoBBFf57yE6opeyqqNbDWBGnB4TzvFBQwDN",
-  "mintAddress": "HcEfPDUGUaNbsb318rZRiFi7PnxWXbBEa4DAHgTgpump",
-  "heliusApiKey": "",
-  "solUsdPrice": 119.1,
+  "mintAddress": "G5YWyJUz1QNyMDPr47mJYsDX3LxWQEDJokTwxTuoh1fK",
+  "heliusApiKey": "aac38acb-66a6-4494-870e-8bb5c14c051a",
+  "solUsdPrice": 119.7,
   "minSpawnSol": 0.01,
   "telegramUrl": "",
-  "twitterUrl": "https://x.com/DickHoppers_sol",
+  "twitterUrl": "https://x.com/Growers_sol",
   "tokenSymbol": "$DICK",
   "tokenName": "DICK COIN",
   "prizePoolEnabled": true,
@@ -42,5 +42,5 @@
       "wonAt": 1790623236481
     }
   ],
-  "updatedAt": 1790623358038
+  "updatedAt": 1790677572418
 }

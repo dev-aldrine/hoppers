@@ -1,13 +1,13 @@
 // 📏 HODL Growth & Prize Pool Game Mechanics
 
 export const INCHES_PER_SCALE_UNIT = 4.92; // 1.0 scale = ~4.92 inches (~125 mm)
-export const MM_PER_SECOND = 0.05; // 🎯 1 second of holding = +0.05 mm (+3.0 mm/min)
-export const INCHES_PER_SECOND = MM_PER_SECOND / 25.4;
-export const DEFAULT_PRIZE_DISTRIBUTION = [40, 25, 15, 12, 8]; // Percentages for 1st to 5th place
+export const MM_PER_SECOND = 0; // Disabled time-based growth
+export const INCHES_PER_SECOND = 0;
+export const DEFAULT_PRIZE_DISTRIBUTION = [40, 25, 15, 12, 8];
 
 /**
  * Calculates the base scale multiplier from initial SOL buy
- * Gentle proportional curve (1.0x to max 2.8x) so hoppers are never ridiculously tall
+ * Proportional curve (1.0x to max 2.8x) based on buy amount
  */
 export function calculateBaseShaftScale(solAmount) {
   const sol = Math.max(0.01, Number(solAmount) || 0.1);
@@ -16,47 +16,38 @@ export function calculateBaseShaftScale(solAmount) {
 }
 
 /**
- * Calculates the base length in inches from initial SOL buy
+ * Calculates the length in inches from SOL buy amount
  */
 export function calculateBaseInches(solAmount) {
   return calculateBaseShaftScale(solAmount) * INCHES_PER_SCALE_UNIT;
 }
 
 /**
- * Calculates bonus inches earned by holding over time (+0.05 mm per second)
+ * Time growth is removed (returns 0)
  */
-export function calculateHodlGrowthInches(spawnTimestamp, mmPerSecond = MM_PER_SECOND, bonusMinutes = 0) {
-  const now = Date.now();
-  const spawnTime = spawnTimestamp || now;
-  const elapsedSeconds = Math.max(0, (now - spawnTime) / 1000) + Math.max(0, (Number(bonusMinutes) || 0) * 60);
-  const growthInMm = elapsedSeconds * (Number(mmPerSecond) || MM_PER_SECOND);
-  return growthInMm / 25.4; // Convert mm to inches
+export function calculateHodlGrowthInches() {
+  return 0;
 }
 
 /**
- * Calculates bonus mm earned by holding over time (+0.05 mm per second)
+ * Time growth mm is removed (returns '0.0')
  */
-export function calculateHodlGrowthMm(spawnTimestamp, mmPerSecond = MM_PER_SECOND, bonusMinutes = 0) {
-  const now = Date.now();
-  const spawnTime = spawnTimestamp || now;
-  const elapsedSeconds = Math.max(0, (now - spawnTime) / 1000) + Math.max(0, (Number(bonusMinutes) || 0) * 60);
-  return (elapsedSeconds * (Number(mmPerSecond) || MM_PER_SECOND)).toFixed(1);
+export function calculateHodlGrowthMm() {
+  return '0.0';
 }
 
 /**
- * Calculates total current shaft length in inches (Base + HODL Growth at +0.05 mm/sec)
+ * Calculates total shaft length in inches based on buy amount
  */
-export function calculateTotalInches(solAmount, spawnTimestamp, mmPerSecond = MM_PER_SECOND, bonusMinutes = 0) {
-  const base = calculateBaseInches(solAmount);
-  const hodl = calculateHodlGrowthInches(spawnTimestamp, mmPerSecond, bonusMinutes);
-  return base + hodl;
+export function calculateTotalInches(solAmount) {
+  return calculateBaseInches(solAmount);
 }
 
 /**
- * Converts total inches back to 3D mesh Y-axis scale factor (Clean clamp max 2.8x)
+ * Converts total inches back to 3D mesh Y-axis scale factor
  */
 export function calculateTotalShaftScale(totalInches) {
-  return Math.min(2.8, Math.max(1.0, totalInches / INCHES_PER_SCALE_UNIT));
+  return Math.min(2.8, Math.max(1.0, (Number(totalInches) || INCHES_PER_SCALE_UNIT) / INCHES_PER_SCALE_UNIT));
 }
 
 /**

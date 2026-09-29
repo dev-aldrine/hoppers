@@ -178,37 +178,6 @@ function getSharedMouthMaterial(originalMat) {
   return sharedMouthMaterial || originalMat;
 }
 
-// 👑 3D King Crown GLB Model for Whale Buyers & Winners
-function KingCrownModel({ position = [0, 0, 0], scale = 0.018 }) {
-  const crownRef = useRef();
-  const { scene } = useGLTF('/models/king_crown.glb');
-
-  const clonedCrown = useMemo(() => {
-    const clone = scene.clone(true);
-    clone.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = false;
-        child.receiveShadow = false;
-        child.frustumCulled = true;
-      }
-    });
-    return clone;
-  }, [scene]);
-
-  useFrame((state) => {
-    if (!crownRef.current) return;
-    const t = state.clock.getElapsedTime();
-    crownRef.current.rotation.y = t * 1.5;
-    crownRef.current.position.y = position[1] + Math.sin(t * 3.0) * 0.02;
-  });
-
-  return (
-    <group ref={crownRef} position={position} scale={scale}>
-      <primitive object={clonedCrown} />
-    </group>
-  );
-}
-
 // Isolated Lightweight Overhead Tag Component
 function OverheadTag({
   wallet,
@@ -281,14 +250,14 @@ export function DickNPC({
   isStationary = false,
   tagOffsetY = -0.26,
   tagScale = 1.60,
-  crownOffsetY = -0.18,
-  crownScale = 0.0090,
+  overrideShaftScale,
+  overrideInches,
+  hideTag = false,
   isFollowed = false,
   onUpdateHeadPos,
   onSelect,
 }) {
   const groupRef = useRef();
-  const crownGroupRef = useRef();
   const tagGroupRef = useRef();
   const dustRef = useRef();
   const shadowRef = useRef();
@@ -385,8 +354,8 @@ export function DickNPC({
     smoothTiltX: 0.0,
     dustOpacity: 0.0,
     dustScale: 0.1,
-    currentInches: calculateTotalInches(solAmount, spawnTimestamp, growthRatePerMin, bonusMinutes),
-    currentScaleY: 1.0,
+    currentInches: overrideInches ?? calculateTotalInches(solAmount, spawnTimestamp, growthRatePerMin, bonusMinutes),
+    currentScaleY: overrideShaftScale ?? 1.0,
     initialized: false,
   });
 
@@ -410,9 +379,13 @@ export function DickNPC({
     const dt = Math.min(delta, 0.08);
 
     // 1. Calculate Real-Time HODL Growth & Mesh Scaling
-    const inches = calculateTotalInches(solAmount, spawnTimestamp, growthRatePerMin, bonusMinutes);
+    const inches = overrideInches !== undefined
+      ? overrideInches
+      : calculateTotalInches(solAmount, spawnTimestamp, growthRatePerMin, bonusMinutes);
     s.currentInches = inches;
-    const shaftScaleY = calculateTotalShaftScale(inches);
+    const shaftScaleY = overrideShaftScale !== undefined
+      ? overrideShaftScale
+      : calculateTotalShaftScale(inches);
     s.currentScaleY = shaftScaleY;
 
     if (shaftNode) {
@@ -423,14 +396,10 @@ export function DickNPC({
       headNode.position.y = HEAD_BASE_Y + SHAFT_HEIGHT * (shaftScaleY - 1);
     }
 
-    // Dynamic vertical anchor points for Crown & Tag
+    // Dynamic vertical anchor points for Tag
     const headPeakY = HEAD_BASE_Y + SHAFT_HEIGHT * (shaftScaleY - 1) + 0.08;
-    const crownFinalY = headPeakY + crownOffsetY;
     const tagFinalY = headPeakY + 0.15 + tagOffsetY;
 
-    if (crownGroupRef.current) {
-      crownGroupRef.current.position.y = crownFinalY;
-    }
     if (tagGroupRef.current) {
       tagGroupRef.current.position.y = tagFinalY;
     }
@@ -577,7 +546,9 @@ export function DickNPC({
 
   const baseInches = calculateBaseInches(solAmount);
   const hodlInches = calculateHodlGrowthInches(spawnTimestamp, growthRatePerMin, bonusMinutes);
-  const initialScaleY = calculateTotalShaftScale(calculateTotalInches(solAmount, spawnTimestamp, growthRatePerMin, bonusMinutes));
+  const initialScaleY = overrideShaftScale !== undefined 
+    ? overrideShaftScale 
+    : calculateTotalShaftScale(calculateTotalInches(solAmount, spawnTimestamp, growthRatePerMin, bonusMinutes));
   const initialHeadPeakY = HEAD_BASE_Y + SHAFT_HEIGHT * (initialScaleY - 1) + 0.08;
 
   return (
@@ -612,13 +583,6 @@ export function DickNPC({
         <planeGeometry args={[1, 1]} />
       </mesh>
 
-      {/* 👑 3D King Crown Model for Whale Buyers & Winners */}
-      {(isWhale || isMegaWhale || isWinner) && (
-        <group ref={crownGroupRef} position={[0, initialHeadPeakY + crownOffsetY, 0]}>
-          <KingCrownModel scale={isWinner ? crownScale * 1.3 : crownScale} />
-        </group>
-      )}
-
       {/* 💨 Cartoon Landing Impact Dust Puff Ring */}
       <mesh
         ref={dustRef}
@@ -635,25 +599,27 @@ export function DickNPC({
       </mesh>
 
       {/* 🏷️ 3D Overhead Name, Inches & Buy Tag (Optimized non-blocking projection) */}
-      <group ref={tagGroupRef} position={[0, initialHeadPeakY + 0.15 + tagOffsetY, 0]}>
-        <SafeHtml
-          center
-          distanceFactor={22}
-          occlude={false}
-          style={{ pointerEvents: 'none', userSelect: 'none' }}
-        >
-          <OverheadTag
-            wallet={wallet}
-            emoji={emoji}
-            isWinner={isWinner}
-            isMegaWhale={isMegaWhale}
-            isWhale={isWhale}
-            isHovered={isHovered}
-            tagScale={tagScale}
-            winnerInfo={winnerInfo}
-          />
-        </SafeHtml>
-      </group>
+      {!hideTag && (
+        <group ref={tagGroupRef} position={[0, initialHeadPeakY + 0.15 + tagOffsetY, 0]}>
+          <SafeHtml
+            center
+            distanceFactor={22}
+            occlude={false}
+            style={{ pointerEvents: 'none', userSelect: 'none' }}
+          >
+            <OverheadTag
+              wallet={wallet}
+              emoji={emoji}
+              isWinner={isWinner}
+              isMegaWhale={isMegaWhale}
+              isWhale={isWhale}
+              isHovered={isHovered}
+              tagScale={tagScale}
+              winnerInfo={winnerInfo}
+            />
+          </SafeHtml>
+        </group>
+      )}
     </group>
   );
 }

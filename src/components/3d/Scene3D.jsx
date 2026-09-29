@@ -4,6 +4,7 @@ import { OrbitControls, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { WorldArena } from './WorldArena';
 import { DickNPC } from './DickNPC';
+import { MarketCap3D } from './MarketCap3D';
 
 // 🎯 Elastic Pan & Dynamic Character Head-Follower Camera Controller:
 // - Smoothly tracks & focuses on selected hopper's head when clicked with cinematic ease-in
@@ -232,14 +233,18 @@ export function Scene3D({
   npcs = [],
   selectedNpcId = null,
   onSelectNpc,
+  marketCap = 0,
+  mcapDistance,
+  mcapOrbitAngle,
+  mcapHeightOffset,
+  mcapFacingAngle,
+  mcapScale,
   arenaRadius = 28,
   overallScale = 7.5,
   groundOffset = 0.2,
   isStationary = false,
   tagOffsetY = -0.26,
   tagScale = 1.60,
-  crownOffsetY = -0.18,
-  crownScale = 0.0090,
   sunPosition = [-2.0, 26.0, 32.0],
   sunRotation = [0, 0, 0],
   sunScale = 1.0,
@@ -316,6 +321,83 @@ export function Scene3D({
         />
 
         <Suspense fallback={null}>
+          {(() => {
+            // 🏛️ Big Central Stationary Monument Hopper (Scaled 20% smaller: 1.872x overall scale)
+            const monumentOverallScale = overallScale * 1.872;
+            const mcap = Math.max(0, Number(marketCap) || 0);
+            const monumentShaftScale = 1.0 + (mcap > 0 ? Math.log10(1 + mcap / 1200) * 1.2 : 0);
+            const monumentInches = monumentShaftScale * 4.92;
+
+            // Compute exact vertical midpoint (center) of the shaft in world coordinates
+            const SHAFT_BASE_LOCAL_Y = 0.15;
+            const HEAD_BASE_Y = 0.5825;
+            const SHAFT_HEIGHT = 0.375;
+            const headLocalY = HEAD_BASE_Y + SHAFT_HEIGHT * (monumentShaftScale - 1);
+            const shaftCenterLocalY = (SHAFT_BASE_LOCAL_Y + headLocalY) / 2;
+            const shaftCenterWorldY = groundOffset + shaftCenterLocalY * monumentOverallScale;
+
+            // 🎯 Radial Orbit around Center Dick Pivot ([0, shaftCenterWorldY, 0])
+            const dist = mcapDistance !== undefined ? mcapDistance : 6.6;
+            const orbit = mcapOrbitAngle !== undefined ? mcapOrbitAngle : -1.50;
+            const heightOff = mcapHeightOffset !== undefined ? mcapHeightOffset : -1.0;
+            const facing = mcapFacingAngle !== undefined ? mcapFacingAngle : 0.10;
+            const sc = mcapScale !== undefined ? mcapScale : 0.95;
+
+            const marketCapX = Math.sin(orbit) * dist;
+            const marketCapZ = Math.cos(orbit) * dist;
+            const marketCapY = shaftCenterWorldY + heightOff;
+
+            const marketCapPos = [marketCapX, marketCapY, marketCapZ];
+            const marketCapRot = [0.0, facing, 0.0];
+            const marketCapScale = sc;
+
+            return (
+              <>
+                <DickNPC
+                  id="monument_center"
+                  wallet="$GROWERS"
+                  fullWallet="MARKET CAP MONUMENT"
+                  solAmount={5.0}
+                  skinIndex={1}
+                  initialPosition={[0, 0, 0]}
+                  arenaRadius={arenaRadius}
+                  overallScale={monumentOverallScale}
+                  groundOffset={groundOffset}
+                  isStationary={true}
+                  hideTag={true}
+                  overrideShaftScale={monumentShaftScale}
+                  overrideInches={monumentInches}
+                  isFollowed={selectedNpcId === 'monument_center' || selectedNpcId === '$GROWERS'}
+                  onUpdateHeadPos={(x, y, z) => {
+                    if (selectedNpcId === 'monument_center' || selectedNpcId === '$GROWERS') {
+                      followedHeadPos.current.set(x, y * 0.90, z);
+                      hasFollowTarget.current = true;
+                    }
+                  }}
+                  onSelect={() => {
+                    if (onSelectNpc) {
+                      onSelectNpc(selectedNpcId === 'monument_center' ? null : {
+                        id: 'monument_center',
+                        wallet: '$GROWERS',
+                        fullWallet: 'Central Market Cap Monument',
+                        solAmount: 5.0,
+                        totalInches: monumentInches,
+                      });
+                    }
+                  }}
+                />
+
+                {/* 👾 3D In-Scene Pixel Market Cap Display (Pivoted to Center Dick) */}
+                <MarketCap3D
+                  marketCap={marketCap}
+                  position={marketCapPos}
+                  rotation={marketCapRot}
+                  scale={marketCapScale}
+                />
+              </>
+            );
+          })()}
+
           <group onClick={() => onSelectNpc && onSelectNpc(null)}>
             <WorldArena
               radius={arenaRadius}
@@ -344,8 +426,6 @@ export function Scene3D({
                 isStationary={isStationary}
                 tagOffsetY={tagOffsetY}
                 tagScale={tagScale}
-                crownOffsetY={crownOffsetY}
-                crownScale={crownScale}
                 isFollowed={Boolean(isFollowed)}
                 onUpdateHeadPos={(x, y, z) => {
                   if (isFollowed) {

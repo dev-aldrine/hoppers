@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Copy, Check, Info, Volume2, VolumeX } from 'lucide-react';
+import { Copy, Check, Volume2, VolumeX, Send, HelpCircle } from 'lucide-react';
 import { isValidPublicKey } from '../../solana/bondingCurve';
 
-export function BottomDock({ settings, onOpenInfo, isMuted = false, onToggleMute }) {
+export function BottomDock({ settings, isMuted = false, onToggleMute, onOpenAbout }) {
   const [copied, setCopied] = useState(false);
 
   const rawMint = settings?.mintAddress?.trim() || '';
@@ -17,7 +17,8 @@ export function BottomDock({ settings, onOpenInfo, isMuted = false, onToggleMute
     }
   };
 
-  const twitterUrl = settings?.twitterUrl || 'https://x.com/dickcoin_sol';
+  const twitterUrl = settings?.twitterUrl || 'https://x.com/Growers_sol';
+  const telegramUrl = settings?.telegramUrl || 'https://t.me/GrowersOnSol';
   const pumpfunUrl = isRealCA ? `https://pump.fun/${rawMint}` : 'https://pump.fun';
 
   return (
@@ -58,6 +59,17 @@ export function BottomDock({ settings, onOpenInfo, isMuted = false, onToggleMute
           <span className="dock-x-icon">𝕏</span>
         </a>
 
+        {/* Telegram */}
+        <a
+          href={telegramUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="dock-icon-btn dock-tg"
+          title="Telegram Community"
+        >
+          <Send size={15} />
+        </a>
+
         {/* Pump.fun Direct Circular Button */}
         <a
           href={pumpfunUrl}
@@ -73,6 +85,18 @@ export function BottomDock({ settings, onOpenInfo, isMuted = false, onToggleMute
           />
         </a>
 
+        {/* ℹ️ About / How it works Button */}
+        {onOpenAbout && (
+          <button
+            type="button"
+            onClick={onOpenAbout}
+            className="dock-icon-btn dock-about"
+            title="About $GROWERS"
+          >
+            <HelpCircle size={16} />
+          </button>
+        )}
+
         {/* 🔊 Audio / Music Mute Toggle Button */}
         <button
           type="button"
@@ -81,16 +105,6 @@ export function BottomDock({ settings, onOpenInfo, isMuted = false, onToggleMute
           title={isMuted ? 'Unmute BGM Music' : 'Mute BGM Music'}
         >
           {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-        </button>
-
-        {/* ℹ️ How It Works & Game Mechanics */}
-        <button
-          type="button"
-          onClick={onOpenInfo}
-          className="dock-icon-btn dock-info"
-          title="How It Works & Game Mechanics"
-        >
-          <Info size={16} />
         </button>
       </div>
     </div>
