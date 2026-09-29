@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Sparkles } from 'lucide-react';
+import growersLogo from '../../assets/growers_wordmark.png';
 
 export function InfoModal({ onClose }) {
   return (
@@ -12,7 +13,7 @@ export function InfoModal({ onClose }) {
         {/* Modal Header with GROWERS Logo */}
         <div className="modal-header info-modal-header" style={{ justifyContent: 'center', textAlign: 'center', marginBottom: '14px' }}>
           <img
-            src="/growers_logo.png"
+            src={growersLogo}
             alt="GROWERS"
             className="info-modal-logo-img"
             style={{

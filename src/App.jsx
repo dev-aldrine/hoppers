@@ -7,6 +7,7 @@ import { BottomDock } from './components/ui/BottomDock';
 import { AdminModal } from './components/ui/AdminModal';
 import { InfoModal } from './components/ui/InfoModal';
 import { CameraHint } from './components/ui/CameraHint';
+import growersLogo from './assets/growers_wordmark.png';
 import { createSolanaConnection } from './solana/heliusConnection';
 import { subscribeBondingCurve, subscribeRealtimeTrades, fetchTopHolders, fetchLiveSolPrice, fetchLiveMarketCapSnapshot } from './solana/pumpTracker';
 import { isValidPublicKey } from './solana/bondingCurve';
@@ -608,7 +609,7 @@ export default function App() {
       {/* 🌟 Top Center Rebranded GROWERS Logo */}
       <div className="top-center-brand-logo">
         <img
-          src="/growers_logo.png"
+          src={growersLogo}
           alt="GROWERS"
           className="brand-logo-img"
         />

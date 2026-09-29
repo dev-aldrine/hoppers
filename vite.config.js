@@ -122,15 +122,6 @@ export default defineConfig({
     host: true,
   },
   optimizeDeps: {
-    include: [
-      '@solana/web3.js',
-      'buffer',
-      'three',
-      '@react-three/fiber',
-      '@react-three/drei',
-      'lucide-react',
-      'canvas-confetti',
-    ],
     esbuildOptions: {
       target: 'es2020',
       define: {
