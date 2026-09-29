@@ -121,7 +121,29 @@ export default defineConfig({
     port: 3000,
     host: true,
   },
+  optimizeDeps: {
+    include: [
+      '@solana/web3.js',
+      'buffer',
+      'three',
+      '@react-three/fiber',
+      '@react-three/drei',
+      'lucide-react',
+      'canvas-confetti',
+    ],
+    esbuildOptions: {
+      target: 'es2020',
+      define: {
+        global: 'globalThis',
+      },
+    },
+  },
+  build: {
+    target: 'es2020',
+    chunkSizeWarningLimit: 2000,
+  },
   define: {
     'process.env': {},
+    global: 'globalThis',
   },
 });
