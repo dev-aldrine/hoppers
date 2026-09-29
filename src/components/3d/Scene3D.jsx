@@ -328,27 +328,16 @@ export function Scene3D({
             const monumentShaftScale = 1.0 + (mcap > 0 ? Math.log10(1 + mcap / 1200) * 1.2 : 0);
             const monumentInches = monumentShaftScale * 4.92;
 
-            // Compute exact vertical midpoint (center) of the shaft in world coordinates
-            const SHAFT_BASE_LOCAL_Y = 0.15;
+            // Compute exact top peak of the center dick head in world coordinates
             const HEAD_BASE_Y = 0.5825;
             const SHAFT_HEIGHT = 0.375;
-            const headLocalY = HEAD_BASE_Y + SHAFT_HEIGHT * (monumentShaftScale - 1);
-            const shaftCenterLocalY = (SHAFT_BASE_LOCAL_Y + headLocalY) / 2;
-            const shaftCenterWorldY = groundOffset + shaftCenterLocalY * monumentOverallScale;
+            const headPeakLocalY = HEAD_BASE_Y + SHAFT_HEIGHT * (monumentShaftScale - 1) + 0.12;
+            const headTopWorldY = groundOffset + headPeakLocalY * monumentOverallScale;
 
-            // 🎯 Radial Orbit around Center Dick Pivot ([0, shaftCenterWorldY, 0])
-            const dist = mcapDistance !== undefined ? mcapDistance : 6.6;
-            const orbit = mcapOrbitAngle !== undefined ? mcapOrbitAngle : -1.50;
-            const heightOff = mcapHeightOffset !== undefined ? mcapHeightOffset : -1.0;
-            const facing = mcapFacingAngle !== undefined ? mcapFacingAngle : 0.10;
+            // 🎯 Anchor Market Cap directly on top of the center dick head at all times
             const sc = mcapScale !== undefined ? mcapScale : 0.95;
-
-            const marketCapX = Math.sin(orbit) * dist;
-            const marketCapZ = Math.cos(orbit) * dist;
-            const marketCapY = shaftCenterWorldY + heightOff;
-
-            const marketCapPos = [marketCapX, marketCapY, marketCapZ];
-            const marketCapRot = [0.0, facing, 0.0];
+            const marketCapPos = [0, headTopWorldY + 2.0, 0];
+            const marketCapRot = [0.0, 0.0, 0.0];
             const marketCapScale = sc;
 
             return (
