@@ -2934,3 +2934,169 @@ body, html {
   transform: translateY(-2px);
 }
 
+/* 🎥 3D Camera Controls Onboarding Hint Toast */
+.camera-hint-wrapper {
+  position: absolute;
+  bottom: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  pointer-events: auto;
+  user-select: none;
+  animation: hintFloat 3s ease-in-out infinite alternate;
+}
+
+.camera-hint-wrapper.fade-in {
+  animation: hintSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards, hintFloat 3s ease-in-out 0.5s infinite alternate;
+}
+
+.camera-hint-wrapper.fade-out {
+  animation: hintFadeOut 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+.camera-hint-pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(13, 16, 27, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 105, 180, 0.35);
+  border-radius: 9999px;
+  padding: 8px 14px 8px 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 105, 180, 0.25);
+  color: #ffffff;
+  font-family: 'Space Grotesk', -apple-system, sans-serif;
+}
+
+.camera-hint-glow {
+  position: absolute;
+  inset: -1px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(255, 105, 180, 0.2), rgba(0, 240, 255, 0.2), rgba(255, 230, 0, 0.2));
+  opacity: 0.5;
+  z-index: -1;
+  filter: blur(4px);
+}
+
+.camera-hint-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hint-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 105, 180, 0.2);
+  border: 1px solid rgba(255, 105, 180, 0.4);
+  color: #ff69b4;
+}
+
+.hint-icon-badge.rotate-pulse {
+  animation: badgeSpin 6s linear infinite;
+}
+
+@keyframes badgeSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.hint-text {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.hint-text b {
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.hint-separator {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.btn-hint-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 2px;
+}
+
+.btn-hint-close:hover {
+  background: rgba(255, 105, 180, 0.3);
+  color: #ffffff;
+  border-color: rgba(255, 105, 180, 0.5);
+  transform: scale(1.1);
+}
+
+@keyframes hintSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes hintFadeOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, 15px) scale(0.92);
+  }
+}
+
+@keyframes hintFloat {
+  0% {
+    transform: translate(-50%, 0px);
+  }
+  100% {
+    transform: translate(-50%, -4px);
+  }
+}
+
+@media (max-width: 768px) {
+  .camera-hint-wrapper {
+    bottom: 78px;
+    width: 90vw;
+    max-width: 360px;
+  }
+  .camera-hint-pill {
+    padding: 6px 12px;
+    gap: 8px;
+    justify-content: space-around;
+  }
+  .hint-text {
+    font-size: 0.74rem;
+  }
+  .hint-separator:last-of-type,
+  .camera-hint-item:last-of-type {
+    display: none;
+  }
+}
+

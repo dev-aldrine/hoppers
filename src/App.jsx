@@ -6,6 +6,7 @@ import { TradeFeed } from './components/ui/TradeFeed';
 import { BottomDock } from './components/ui/BottomDock';
 import { AdminModal } from './components/ui/AdminModal';
 import { InfoModal } from './components/ui/InfoModal';
+import { CameraHint } from './components/ui/CameraHint';
 import { createSolanaConnection } from './solana/heliusConnection';
 import { subscribeBondingCurve, subscribeRealtimeTrades, fetchTopHolders, fetchLiveSolPrice, fetchLiveMarketCapSnapshot } from './solana/pumpTracker';
 import { isValidPublicKey } from './solana/bondingCurve';
@@ -639,6 +640,9 @@ export default function App() {
           <button className="btn-unfocus-pill">✕ Unfocus</button>
         </div>
       )}
+
+      {/* 🧭 Interactive 3D Camera Controls Hint */}
+      <CameraHint />
 
       {/* 🚀 Floating Bottom Center Dock (CA + Copy, X, Telegram, Pump.fun, About, Mute, Admin) */}
       <BottomDock
