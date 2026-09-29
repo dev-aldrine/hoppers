@@ -59,17 +59,19 @@ export function MarketCap3D({
     };
   }, []);
 
-  // Gentle subtle hovering in 3D scene space + Always faces the active camera
+  // Gentle subtle hovering in 3D scene space + Y-axis only camera tracking
   useFrame((state) => {
     if (!groupRef.current) return;
     const t = state.clock.getElapsedTime();
     groupRef.current.position.set(
       position[0],
-      position[1] + Math.sin(t * 1.5) * 0.25,
+      position[1] + Math.sin(t * 1.5) * 0.2,
       position[2]
     );
-    // 🎥 Keep text facing directly toward the camera at all rotation angles
-    groupRef.current.quaternion.copy(state.camera.quaternion);
+    // 🎥 Rotate ONLY around the Y-axis (horizontal yaw) to face camera; X and Z locked at 0
+    const cam = state.camera.position;
+    const angleY = Math.atan2(cam.x - position[0], cam.z - position[2]);
+    groupRef.current.rotation.set(0, angleY, 0);
   });
 
   return (
