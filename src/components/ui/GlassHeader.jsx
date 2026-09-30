@@ -33,7 +33,7 @@ export function GlassHeader({
               {settings?.tokenSymbol || '$DICK'}{' '}
               <span className="live-dot-pulse">● LIVE</span>
             </h1>
-            <p className="brand-subtitle">Pump.fun Real-Time 3D NPC Tracker</p>
+            <p className="brand-subtitle">Pump.fun Real-Time 3D Crown Arena</p>
           </div>
         </div>
 
@@ -53,13 +53,6 @@ export function GlassHeader({
       </div>
 
       <div className="header-right">
-        {/* Active Hoppers Count */}
-        <div className="stats-pill">
-          <Sparkles size={14} className="text-neon-cyan" />
-          <span><b>{npcCount}</b> Active Hoppers</span>
-        </div>
-
-
         {/* Pump.fun Direct Link */}
         {isRealCA && (
           <a

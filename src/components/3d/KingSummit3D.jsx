@@ -1,19 +1,16 @@
-import React, { useRef, useMemo, useState, useEffect } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF, useAnimations } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { SafeHtml } from './SafeHtml';
-import { soundManager } from '../../audio/soundEffects';
 
 const CROWN_GLB_URL = '/models/king_crown.glb';
-const CHARACTER_GLB_URL = '/models/character.glb';
 
-// Preload models for instantaneous rendering
+// Preload crown model for instantaneous rendering
 useGLTF.preload(CROWN_GLB_URL);
-useGLTF.preload(CHARACTER_GLB_URL);
 
 // 👑 Golden Crown 3D Model
-export function KingCrownModel({ position = [0, 0, 0], rotation = [0, 0, 0], scale = [0.45, 0.45, 0.45] }) {
+export function KingCrownModel({ position = [0, 0, 0], rotation = [0, 0, 0], scale = [0.85, 0.85, 0.85] }) {
   const { scene } = useGLTF(CROWN_GLB_URL);
   const crownRef = useRef();
 
@@ -25,10 +22,10 @@ export function KingCrownModel({ position = [0, 0, 0], rotation = [0, 0, 0], sca
         child.receiveShadow = true;
         if (child.material) {
           child.material = child.material.clone();
-          child.material.metalness = 0.9;
-          child.material.roughness = 0.2;
+          child.material.metalness = 0.92;
+          child.material.roughness = 0.18;
           child.material.emissive = new THREE.Color('#ffb703');
-          child.material.emissiveIntensity = 0.4;
+          child.material.emissiveIntensity = 0.45;
         }
       }
     });
@@ -38,115 +35,30 @@ export function KingCrownModel({ position = [0, 0, 0], rotation = [0, 0, 0], sca
   useFrame((state) => {
     if (crownRef.current) {
       const t = state.clock.getElapsedTime();
-      crownRef.current.position.y = position[1] + Math.sin(t * 3.0) * 0.04;
-      crownRef.current.rotation.y = rotation[1] + t * 0.8;
+      crownRef.current.position.y = position[1] + Math.sin(t * 2.5) * 0.12;
+      crownRef.current.rotation.y = rotation[1] + t * 0.9;
     }
   });
 
   return (
     <group ref={crownRef} position={position} rotation={rotation} scale={scale}>
       <primitive object={clonedCrown} />
-      <pointLight color="#ffd166" intensity={1.5} distance={4} />
+      <pointLight color="#ffd166" intensity={2.2} distance={8} />
     </group>
   );
 }
 
-// 💥 Falling / Dethroned King Tumbling Off Cliff
-function FallingKing({ king, summitPos, onDone }) {
-  const groupRef = useRef();
-  const { scene } = useGLTF(CHARACTER_GLB_URL);
-  
-  // Clone character model
-  const characterModel = useMemo(() => {
-    const clone = scene.clone(true);
-    clone.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        if (child.material) {
-          child.material = child.material.clone();
-          child.material.color = new THREE.Color('#ef476f');
-        }
-      }
-    });
-    return clone;
-  }, [scene]);
-
-  // Random trajectory off the mountain cliff
-  const trajectory = useMemo(() => {
-    const angle = Math.random() * Math.PI * 2;
-    const horizontalSpeed = 8.0 + Math.random() * 4.0;
-    return {
-      vx: Math.cos(angle) * horizontalSpeed,
-      vy: 6.0 + Math.random() * 3.0,
-      vz: Math.sin(angle) * horizontalSpeed,
-      spinX: (Math.random() - 0.5) * 12.0,
-      spinY: (Math.random() - 0.5) * 10.0,
-      spinZ: (Math.random() - 0.5) * 12.0,
-      startY: summitPos[1],
-      startX: summitPos[0],
-      startZ: summitPos[2],
-      startTime: Date.now(),
-    };
-  }, [summitPos]);
-
-  useFrame(() => {
-    if (!groupRef.current) return;
-    const elapsed = (Date.now() - trajectory.startTime) / 1000;
-    
-    // Physics displacement: gravity = -18 m/s^2
-    const x = trajectory.startX + trajectory.vx * elapsed;
-    const y = Math.max(-2, trajectory.startY + trajectory.vy * elapsed - 0.5 * 18 * elapsed * elapsed);
-    const z = trajectory.startZ + trajectory.vz * elapsed;
-
-    groupRef.current.position.set(x, y, z);
-    groupRef.current.rotation.x += trajectory.spinX * 0.03;
-    groupRef.current.rotation.y += trajectory.spinY * 0.03;
-    groupRef.current.rotation.z += trajectory.spinZ * 0.03;
-
-    // Fade out / cleanup after 2.5s
-    if (elapsed > 2.5) {
-      if (onDone) onDone(king.id);
-    }
-  });
-
-  return (
-    <group ref={groupRef} position={summitPos} scale={[0.75, 0.75, 0.75]}>
-      <primitive object={characterModel} />
-    </group>
-  );
-}
-
-// 🏛️ The Crown Summit: Crown Mountain Pedestal & Active Crowned King
+// 🏛️ The Crown Summit: Crown Mountain Pedestal & Floating Golden Crown
 export function KingSummit3D({
-  summitPos = [0, 18.0, 0],
+  summitPos = [0, 56.0, 0],
   crownedKing = null,
   timerSeconds = 60,
   timerDuration = 60,
   accumulatedFeesSol = 0.5,
-  fallenKings = [],
-  onRemoveFallenKing,
 }) {
-  const kingGroupRef = useRef();
   const beamRef = useRef();
-  const { scene, animations } = useGLTF(CHARACTER_GLB_URL);
-  const { actions } = useAnimations(animations, kingGroupRef);
 
-  // Trigger idle animation for king
-  useEffect(() => {
-    if (actions) {
-      const firstAction = Object.values(actions)[0];
-      if (firstAction) {
-        firstAction.reset().fadeIn(0.3).play();
-      }
-    }
-  }, [actions, crownedKing?.wallet]);
-
-  // Gentle breathing / victory sway
   useFrame((state) => {
-    if (kingGroupRef.current) {
-      const t = state.clock.getElapsedTime();
-      kingGroupRef.current.rotation.y = Math.sin(t * 0.5) * 0.25;
-    }
     if (beamRef.current) {
       const t = state.clock.getElapsedTime();
       beamRef.current.material.opacity = 0.35 + Math.sin(t * 4.0) * 0.15;
@@ -238,19 +150,12 @@ export function KingSummit3D({
         />
       </mesh>
 
-      {/* 👑 Active Crowned King Character at Summit */}
-      {hasRealKing && (
-        <group ref={kingGroupRef} position={[0, 1.0, 0]} scale={[0.85, 0.85, 0.85]}>
-          <primitive object={scene} />
-
-          {/* 3D King Crown attached to head */}
-          <KingCrownModel
-            position={[0, 1.95, 0]}
-            rotation={[0, 0, 0]}
-            scale={[0.55, 0.55, 0.55]}
-          />
-        </group>
-      )}
+      {/* 👑 Majestic Floating King Crown directly on the Summit Dais */}
+      <KingCrownModel
+        position={[0, 1.6, 0]}
+        rotation={[0, 0, 0]}
+        scale={[0.95, 0.95, 0.95]}
+      />
 
       {/* 🏷️ Big Majestic Overhead Crown & Timer Badge (+30% Y elevation) */}
       <SafeHtml position={[0, 12.5, 0]} center distanceFactor={52} occlude={false}>
@@ -293,16 +198,6 @@ export function KingSummit3D({
           </div>
         </div>
       </SafeHtml>
-
-      {/* 💥 Falling Dethroned Kings */}
-      {fallenKings.map((fk) => (
-        <FallingKing
-          key={fk.id}
-          king={fk}
-          summitPos={summitPos}
-          onDone={onRemoveFallenKing}
-        />
-      ))}
     </group>
   );
 }

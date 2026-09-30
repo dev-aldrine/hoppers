@@ -792,22 +792,12 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* 3D WebGL Scene with Crown Mountain & Walking Contender NPCs */}
+      {/* 3D WebGL Scene with Grand Crown Mountain & Floating Golden Crown */}
       <Scene3D
-        npcs={enrichedNpcs}
-        selectedNpcId={selectedNpc?.id || null}
-        onSelectNpc={(npc) => setSelectedNpc(npc)}
-        arenaRadius={140}
-        overallScale={overallScale}
-        groundOffset={groundOffset}
-        tagOffsetY={tagOffsetY}
-        tagScale={tagScale}
         crownedKing={crownedKing}
         timerSeconds={timerSeconds}
         timerDuration={timerDuration}
         accumulatedFeesSol={accumulatedFeesSol}
-        fallenKings={fallenKings}
-        onRemoveFallenKing={handleRemoveFallenKing}
       />
 
       {/* 👑 Top Center CROWNED HUD */}
@@ -895,21 +885,6 @@ export default function App() {
           </button>
         </div>
       </div>
-
-      {/* 🎥 Floating Camera Focus Indicator with Unfocus action */}
-      {selectedNpc && (
-        <div
-          className="camera-focus-banner"
-          onClick={() => setSelectedNpc(null)}
-          title="Click to unfocus camera"
-        >
-          <span className="camera-focus-icon">🎥</span>
-          <span className="camera-focus-text">
-            Following <span className="camera-focus-wallet">{selectedNpc.wallet}</span>
-          </span>
-          <button className="btn-unfocus-pill">✕ Unfocus</button>
-        </div>
-      )}
 
       {/* 🧭 Interactive 3D Camera Controls Hint */}
       <CameraHint />

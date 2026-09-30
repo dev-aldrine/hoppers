@@ -113,15 +113,13 @@ export function WorldArena({
         summitHeight={56.0}
       />
 
-      {/* 👑 The Crown Summit Platform & Crowned King Character */}
+      {/* 👑 The Crown Summit Platform & Floating Golden Crown */}
       <KingSummit3D
         summitPos={[0, 56.0, 0]}
         crownedKing={crownedKing}
         timerSeconds={timerSeconds}
         timerDuration={timerDuration}
         accumulatedFeesSol={accumulatedFeesSol}
-        fallenKings={fallenKings}
-        onRemoveFallenKing={onRemoveFallenKing}
       />
 
       {/* Clouds */}

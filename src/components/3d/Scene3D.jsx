@@ -3,7 +3,6 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { WorldArena } from './WorldArena';
-import { PlayerNPC } from './PlayerNPC';
 
 // 🎯 Elastic Pan & Dynamic Character Head-Follower Camera Controller:
 // - Smoothly tracks & focuses on selected player's head when clicked with cinematic ease-in
@@ -258,8 +257,6 @@ export function Scene3D({
   timerSeconds = 60,
   timerDuration = 60,
   accumulatedFeesSol = 0.5,
-  fallenKings = [],
-  onRemoveFallenKing,
 }) {
   const followedHeadPos = useRef(new THREE.Vector3(0, 57.5, 0));
   const hasFollowTarget = useRef(false);
@@ -336,8 +333,6 @@ export function Scene3D({
               timerSeconds={timerSeconds}
               timerDuration={timerDuration}
               accumulatedFeesSol={accumulatedFeesSol}
-              fallenKings={fallenKings}
-              onRemoveFallenKing={onRemoveFallenKing}
             />
           </group>
         </Suspense>
