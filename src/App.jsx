@@ -441,18 +441,23 @@ export default function App() {
     setHolders([]);
     setNpcs([]);
 
-    // Instant snapshot for immediate UI feedback (< 50ms) on CA switch
-    fetchLiveMarketCapSnapshot(rawMint, solUsdPriceRef.current).then((snap) => {
-      if (snap) {
-        setMarketCapData((prev) => ({ ...prev, ...snap }));
-        if (snap.creatorFeesSol && snap.creatorFeesSol > 0) {
-          setAccumulatedFeesSol(snap.creatorFeesSol);
-          try {
-            localStorage.setItem('crowned_accumulated_fees', String(snap.creatorFeesSol));
-          } catch (e) {}
+    // 0. Live Volume & Creator Fees Refresher
+    const refreshVolumeAndFees = () => {
+      fetchLiveMarketCapSnapshot(rawMint, solUsdPriceRef.current).then((snap) => {
+        if (snap) {
+          setMarketCapData((prev) => ({ ...prev, ...snap }));
+          if (snap.creatorFeesSol && snap.creatorFeesSol > 0) {
+            setAccumulatedFeesSol(snap.creatorFeesSol);
+            try {
+              localStorage.setItem('crowned_accumulated_fees', String(snap.creatorFeesSol));
+            } catch (e) {}
+          }
         }
-      }
-    });
+      });
+    };
+
+    // Instant snapshot on CA load
+    refreshVolumeAndFees();
 
     // Seed recent on-chain transactions for Transaction Leaderboard
     fetchRecentTrades(connection, rawMint, settings.heliusApiKey, solUsdPriceRef.current).then((recentTxs) => {
