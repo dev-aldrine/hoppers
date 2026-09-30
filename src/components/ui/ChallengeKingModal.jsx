@@ -167,9 +167,9 @@ export function ChallengeKingModal({
           <div className="challenge-rules-card">
             <h4 className="rules-card-title">📜 Crown Rules & Settlement:</h4>
             <ul className="rules-list">
-              <li>🏆 <strong>Buy minimum 0.25 SOL</strong> to knock the current King off the mountain.</li>
-              <li>⏱️ <strong>60-Second Timer Resets:</strong> Hold the peak for 60 seconds without being dethroned.</li>
-              <li>💰 <strong>Fee Redirection:</strong> If your 60s timer hits 0, all accumulated protocol fees (<strong>◎ {accumulatedFeesSol.toFixed(3)} SOL</strong>) are won and redirected directly to your wallet!</li>
+              <li>🏆 <strong>Buy minimum 0.25 SOL</strong> on Pump.fun or via instant dethrone to knock the current King off the mountain.</li>
+              <li>⏱️ <strong>60-Second Timer Resets:</strong> Hold the peak for 60 seconds without being dethroned by another 0.25+ buyer.</li>
+              <li>💰 <strong>0.30% Creator Fee Redirection:</strong> 100% of all Pump.fun bonding curve creator reward fees (<strong>0.30% of trading volume = ◎ {accumulatedFeesSol.toFixed(3)} SOL</strong>) are redirected directly to the winner's wallet!</li>
             </ul>
           </div>
 

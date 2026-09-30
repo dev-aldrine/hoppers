@@ -189,10 +189,10 @@ export default function App() {
     // 2. Reset 60s Timer
     setTimerSeconds(60.0);
 
-    // 3. Add fee accumulation to prize pot
-    const feeAdded = Math.max(0.015, amount * 0.05);
+    // 3. Add 0.30% Creator Fee to prize pot
+    const feeAdded = amount * 0.0030;
     setAccumulatedFeesSol((prev) => {
-      const updated = Number((prev + feeAdded).toFixed(3));
+      const updated = Number((prev + feeAdded).toFixed(4));
       try {
         localStorage.setItem('crowned_accumulated_fees', String(updated));
       } catch (e) {}
@@ -359,6 +359,16 @@ export default function App() {
 
     setTrades((prev) => [newTrade, ...prev.slice(0, 19)]);
 
+    // Add 0.30% Creator Reward Fee from this live trade to the prize pot
+    const tradeCreatorFee = solAmount * 0.0030;
+    setAccumulatedFeesSol((prev) => {
+      const updated = Number((prev + tradeCreatorFee).toFixed(4));
+      try {
+        localStorage.setItem('crowned_accumulated_fees', String(updated));
+      } catch (e) {}
+      return updated;
+    });
+
     if ((txType === 'buy' || txType === 'BUY') && solAmount >= 0.25) {
       // 👑 Automatic King Dethroning on >= 0.25 SOL Buy!
       dethroneKing(traderWallet || shortWallet, solAmount, tradeEvent.signature, tradeEvent.timestamp);
@@ -435,6 +445,12 @@ export default function App() {
     fetchLiveMarketCapSnapshot(rawMint, solUsdPriceRef.current).then((snap) => {
       if (snap) {
         setMarketCapData((prev) => ({ ...prev, ...snap }));
+        if (snap.creatorFeesSol && snap.creatorFeesSol > 0) {
+          setAccumulatedFeesSol(snap.creatorFeesSol);
+          try {
+            localStorage.setItem('crowned_accumulated_fees', String(snap.creatorFeesSol));
+          } catch (e) {}
+        }
       }
     });
 
@@ -813,10 +829,11 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bounty Fee Pool */}
+          {/* Bounty Fee Pool (0.30% Creator Fees) */}
           <div className="crowned-hud-bounty">
-            <span className="crowned-bounty-label">Prize Pool:</span>
+            <span className="crowned-bounty-label">0.30% Creator Rewards:</span>
             <span className="crowned-bounty-val">◎ {accumulatedFeesSol.toFixed(3)} SOL</span>
+            <span className="crowned-bounty-usd">≈ ${(accumulatedFeesSol * (marketCapData.solUsdPrice || 119.5)).toFixed(2)}</span>
           </div>
 
           {/* Dethrone Action CTA */}

@@ -42,7 +42,36 @@ export async function fetchLiveSolPrice() {
 }
 
 /**
- * Fetches token snapshot from public DEX APIs (DexScreener / Pump) for immediate instant market cap
+ * Calculates Creator Reward Fees based on Pump.fun Bonding Curve specifications
+ * Bonding Curve Phase: Flat 0.30% (0.0030) of total trading volume
+ */
+export function calculateCreatorRewardFees(volumeUsd = 0, volumeSol = 0, solUsdPrice = 119.5) {
+  const effectiveSolPrice = Number(solUsdPrice) || 119.5;
+  let totalVolSol = Number(volumeSol) || 0;
+  let totalVolUsd = Number(volumeUsd) || 0;
+
+  if (totalVolUsd > 0 && totalVolSol === 0) {
+    totalVolSol = totalVolUsd / effectiveSolPrice;
+  } else if (totalVolSol > 0 && totalVolUsd === 0) {
+    totalVolUsd = totalVolSol * effectiveSolPrice;
+  }
+
+  // 0.30% (0.003) flat fee for Pump.fun bonding curve trading volume
+  const CREATOR_FEE_RATE = 0.0030;
+  const creatorFeesSol = totalVolSol * CREATOR_FEE_RATE;
+  const creatorFeesUsd = totalVolUsd * CREATOR_FEE_RATE;
+
+  return {
+    feeRatePct: 0.30,
+    totalVolumeSol: Number(totalVolSol.toFixed(3)),
+    totalVolumeUsd: Number(totalVolUsd.toFixed(2)),
+    creatorFeesSol: Number(creatorFeesSol.toFixed(4)),
+    creatorFeesUsd: Number(creatorFeesUsd.toFixed(2)),
+  };
+}
+
+/**
+ * Fetches token snapshot from public DEX APIs (DexScreener / Pump) for immediate instant market cap & 0.30% creator fees
  */
 export async function fetchLiveMarketCapSnapshot(mintAddress, solUsdPrice = 155) {
   if (!mintAddress || !isValidPublicKey(mintAddress)) return null;
@@ -60,13 +89,26 @@ export async function fetchLiveMarketCapSnapshot(mintAddress, solUsdPrice = 155)
         const priceInSol = priceUsd / currentSolPrice;
         const mcapInSol = mcapUsd / currentSolPrice;
 
-        if (mcapUsd > 0) {
+        const totalVolumeUsd = Number(pair.volume?.h24 || pair.volume?.h6 || pair.volume?.h1 || 0);
+        const totalVolumeSol = totalVolumeUsd / currentSolPrice;
+        
+        // 0.30% Creator fee on Pump.fun bonding curve
+        const CREATOR_FEE_RATE = 0.0030;
+        const creatorFeesUsd = totalVolumeUsd * CREATOR_FEE_RATE;
+        const creatorFeesSol = totalVolumeSol * CREATOR_FEE_RATE;
+
+        if (mcapUsd > 0 || totalVolumeUsd > 0) {
           return {
             priceInSol,
             mcapInSol,
             mcapSol: mcapInSol,
             mcapInUsd: mcapUsd,
             mcapUsd,
+            totalVolumeUsd: Number(totalVolumeUsd.toFixed(2)),
+            totalVolumeSol: Number(totalVolumeSol.toFixed(3)),
+            creatorFeesSol: Number(creatorFeesSol.toFixed(4)),
+            creatorFeesUsd: Number(creatorFeesUsd.toFixed(2)),
+            creatorFeeRate: 0.0030,
             migrationProgress: pair.dexId === 'raydium' ? 100 : Math.min(100, (mcapUsd / 69000) * 100),
             solUsdPrice: currentSolPrice,
             symbol: pair.baseToken?.symbol,

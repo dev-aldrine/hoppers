@@ -277,7 +277,7 @@ export function KingSummit3D({
 
           {/* Reward Bounty Banner */}
           <div className="king-bounty-chip">
-            <span>💰 Winner Takes Accumulated Fees:</span>
+            <span>💰 0.30% Creator Rewards Pot:</span>
             <strong>◎ {accumulatedFeesSol.toFixed(3)} SOL</strong>
           </div>
         </div>
