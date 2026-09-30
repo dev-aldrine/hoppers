@@ -27,10 +27,10 @@ export function GlassHeader({
     <header className="glass-header">
       <div className="header-left">
         <div className="brand-logo">
-          <span className="logo-emoji">🍆</span>
+          <span className="logo-emoji">👑</span>
           <div className="brand-text">
             <h1 className="brand-title">
-              {settings?.tokenSymbol || '$DICK'}{' '}
+              {settings?.tokenSymbol || 'Crowned'}{' '}
               <span className="live-dot-pulse">● LIVE</span>
             </h1>
             <p className="brand-subtitle">Pump.fun Real-Time 3D Crown Arena</p>
