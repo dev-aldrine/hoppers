@@ -1,6 +1,18 @@
 import { PublicKey } from '@solana/web3.js';
 import { getBondingCurvePDA, decodeBondingCurveData, isValidPublicKey } from './bondingCurve.js';
-import { isValidHeliusApiKey, DEFAULT_HELIUS_API_KEY } from './heliusConnection.js';
+import {
+  isValidHeliusApiKey,
+  DEFAULT_HELIUS_API_KEY,
+  createFallbackConnection,
+  markHeliusRateLimited,
+  isHeliusRateLimited,
+} from './heliusConnection.js';
+
+let cachedFallbackConn = null;
+function getFallback() {
+  if (!cachedFallbackConn) cachedFallbackConn = createFallbackConnection();
+  return cachedFallbackConn;
+}
 
 export const KNOWN_POOL_ADDRESSES = new Set([
   '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P', // Pump.fun Program
@@ -156,7 +168,16 @@ export function subscribeBondingCurve(
     if (!isSubscribed) return;
     if (pda) {
       try {
-        const accountInfo = await connection.getAccountInfo(pda, 'processed');
+        let accountInfo = null;
+        try {
+          const activeConn = isHeliusRateLimited() ? getFallback() : connection;
+          accountInfo = await activeConn.getAccountInfo(pda, 'processed');
+        } catch (rpcErr) {
+          if (String(rpcErr).includes('429') || String(rpcErr).includes('Too Many')) {
+            markHeliusRateLimited(30000);
+            accountInfo = await getFallback().getAccountInfo(pda, 'processed');
+          }
+        }
         if (!isSubscribed) return;
         if (accountInfo?.data && accountInfo.data.length >= 40) {
           const decoded = decodeBondingCurveData(accountInfo.data, getSolPrice());
@@ -355,8 +376,17 @@ export async function fetchHolders(connection, mintAddress, minSolThreshold = 0.
     const pda = getBondingCurvePDA(cleanMint);
     const pdaStr = pda ? pda.toBase58() : '';
 
-    // Step 1: Query largest token accounts
-    const largestAccounts = await connection.getTokenLargestAccounts(mintPubkey);
+    // Step 1: Query largest token accounts with fallback
+    let largestAccounts = null;
+    const activeConn = isHeliusRateLimited() ? getFallback() : connection;
+    try {
+      largestAccounts = await activeConn.getTokenLargestAccounts(mintPubkey);
+    } catch (rpcErr) {
+      if (String(rpcErr).includes('429') || String(rpcErr).includes('Too Many')) {
+        markHeliusRateLimited(30000);
+        largestAccounts = await getFallback().getTokenLargestAccounts(mintPubkey);
+      }
+    }
     const tokenAccounts = largestAccounts?.value || [];
     if (tokenAccounts.length === 0) return [];
 
@@ -387,7 +417,16 @@ export async function fetchHolders(connection, mintAddress, minSolThreshold = 0.
 
     // Step 3: Resolve Real Wallet Owners via batch getMultipleAccountsInfo
     const accountPubkeys = candidateAccounts.map((c) => c.tokenAccountPubkey);
-    const accountsInfo = await connection.getMultipleAccountsInfo(accountPubkeys, 'confirmed');
+    let accountsInfo = null;
+    try {
+      const queryConn = isHeliusRateLimited() ? getFallback() : activeConn;
+      accountsInfo = await queryConn.getMultipleAccountsInfo(accountPubkeys, 'confirmed');
+    } catch (rpcErr) {
+      if (String(rpcErr).includes('429') || String(rpcErr).includes('Too Many')) {
+        markHeliusRateLimited(30000);
+        accountsInfo = await getFallback().getMultipleAccountsInfo(accountPubkeys, 'confirmed');
+      }
+    }
 
     const holders = [];
     const seenOwners = new Set();
@@ -581,22 +620,36 @@ export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 
     }
   } catch (e) {}
 
-  // 2. Query on-chain parsed transactions from Solana RPC with v0 & v1 fallback
+  // 2. Query on-chain parsed transactions from Solana RPC with v0 & v1 fallback and auto-failover
   if (connection) {
     try {
+      const activeConn = isHeliusRateLimited() ? getFallback() : connection;
       const pda = getBondingCurvePDA(cleanMint);
       const targetPubkey = pda || new PublicKey(cleanMint);
-      const sigs = await connection.getSignaturesForAddress(targetPubkey, { limit: 10 });
+      let sigs = null;
+      try {
+        sigs = await activeConn.getSignaturesForAddress(targetPubkey, { limit: 10 });
+      } catch (rpcErr) {
+        if (String(rpcErr).includes('429') || String(rpcErr).includes('Too Many')) {
+          markHeliusRateLimited(30000);
+          sigs = await getFallback().getSignaturesForAddress(targetPubkey, { limit: 10 });
+        }
+      }
       
       if (sigs && sigs.length > 0) {
         const sigList = sigs.slice(0, 6).map((s) => s.signature);
         let txs = null;
+        const queryConn = isHeliusRateLimited() ? getFallback() : activeConn;
         try {
-          txs = await connection.getParsedTransactions(sigList, { maxSupportedTransactionVersion: 0 });
+          txs = await queryConn.getParsedTransactions(sigList, { maxSupportedTransactionVersion: 0 });
         } catch (err0) {
           try {
-            txs = await connection.getParsedTransactions(sigList, { maxSupportedTransactionVersion: 1 });
-          } catch (err1) {}
+            txs = await queryConn.getParsedTransactions(sigList, { maxSupportedTransactionVersion: 1 });
+          } catch (err1) {
+            try {
+              txs = await getFallback().getParsedTransactions(sigList, { maxSupportedTransactionVersion: 0 });
+            } catch (err2) {}
+          }
         }
 
         if (Array.isArray(txs)) {

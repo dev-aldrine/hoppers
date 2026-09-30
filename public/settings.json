@@ -1,8 +1,8 @@
 {
   "adminWallet": "3Pxv5rZVxFoBBFf57yE6opeyqqNbDWBGnB4TzvFBQwDN",
-  "mintAddress": "7cS8RYzdcSe28CzN6xdqdiBT5Fu9fyP1LFexEBPktAFo",
+  "mintAddress": "5paJfQ3dZQt4EBE3ipRarX5pWXiMekqcsuhTLEJspump",
   "heliusApiKey": "4JqE6KecmNzSSYfHiWQ5g1rGqCACqYDsxHtcaqMfpump",
-  "solUsdPrice": 120.26,
+  "solUsdPrice": 119.45,
   "minSpawnSol": 0.01,
   "telegramUrl": "",
   "twitterUrl": "https://x.com/Growers_sol",
@@ -20,27 +20,6 @@
     12,
     8
   ],
-  "prizePoolWinners": [
-    {
-      "id": "npc-starter-1",
-      "wallet": "9zPq...4kLm",
-      "fullWallet": "9zPqR5StUvWxYzAbCdEfGhIjKlMnOpQrStUv4kLm",
-      "rank": 1,
-      "prizeSol": "2.00",
-      "percentage": 40,
-      "inches": 69.35650902938004,
-      "wonAt": 1790623236458
-    },
-    {
-      "id": "npc-starter-2",
-      "wallet": "4xKd...8aB9",
-      "fullWallet": "4xKdEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIj8aB9",
-      "rank": 2,
-      "prizeSol": "1.25",
-      "percentage": 25,
-      "inches": 85.75269701155344,
-      "wonAt": 1790623236481
-    }
-  ],
-  "updatedAt": 1790788874228
+  "prizePoolWinners": [],
+  "updatedAt": 1790789692138
 }
