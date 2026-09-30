@@ -2,6 +2,7 @@ import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import { isInsideAnyBuilding, isNearRoad } from './cityData';
 
 // 🌲 Low-Poly Cartoon Pine Tree
 export function CartoonPineTree({ position = [0, 0, 0], scale = 1.0 }) {
@@ -91,17 +92,28 @@ function LowPolyFlowerPatch({ position = [0, 0, 0], rotation = [0, 0, 0], scale 
 }
 
 // 🌸 Colorful Low-Poly Flower Field
-export function FlowerField({ count = 45, arenaRadius = 24 }) {
+export function FlowerField({ count = 80, arenaRadius = 80 }) {
   const flowerData = useMemo(() => {
     const items = [];
-    for (let i = 0; i < count; i++) {
+    let attempts = 0;
+    while (items.length < count && attempts < count * 8) {
+      attempts++;
       const angle = Math.random() * Math.PI * 2;
-      const r = Math.sqrt(Math.random()) * (arenaRadius * 0.88);
-      const scale = 1.0 + Math.random() * 0.8;
+      const r = 12 + Math.sqrt(Math.random()) * (arenaRadius * 0.85);
+      const x = Math.cos(angle) * r;
+      const z = Math.sin(angle) * r;
+      
+      // Check road coordinate distance
+      if (isNearRoad(x, z, 2.8)) continue;
+
+      // Check building & construction plot distance
+      if (isInsideAnyBuilding(x, z, 2.0)) continue;
+
+      const scale = 0.9 + Math.random() * 0.7;
       const rotY = Math.random() * Math.PI * 2;
       items.push({
-        x: Math.cos(angle) * r,
-        z: Math.sin(angle) * r,
+        x,
+        z,
         rotY,
         scale,
       });

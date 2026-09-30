@@ -8,7 +8,6 @@ class SimplexNoise2D {
     this.p = new Uint8Array(256);
     for (let i = 0; i < 256; i++) this.p[i] = i;
     
-    // Fully deterministic Lehmer / Park-Miller PRNG permutation shuffle
     let s = (Math.abs(seed) || 4242) % 2147483647;
     if (s === 0) s = 1;
 
@@ -104,26 +103,20 @@ class SimplexNoise2D {
 }
 
 export function ProceduralTerrain({
-  innerRadius = 24, // Flat grass arena radius in center
-  outerSize = 180,  // Terrain span
-  segments = 85,    // Low poly mesh resolution
-  seed = 4242,      // Fixed deterministic seed
+  innerRadius = 125, // Flat city arena radius
+  outerSize = 650,    // Full horizon mountain span
+  segments = 140,     // Optimal resolution for clean low-poly facets
+  seed = 4242,
 }) {
   const waterRef = useRef();
 
-  // Generate Low-Poly Flat-Shaded Terrain Geometry with Fixed Deterministic Seed
+  // Generate Harmonious Low-Poly Terraced & Rolling Mountain Ranges
   const { geometry } = useMemo(() => {
     const simplex = new SimplexNoise2D(seed);
     const plane = new THREE.PlaneGeometry(outerSize, outerSize, segments, segments);
     plane.rotateX(-Math.PI / 2);
 
     const pos = plane.attributes.position;
-
-    const cSand = new THREE.Color('#e9d8a6');
-    const cLushGrass = new THREE.Color('#48bb35');
-    const cDeepForest = new THREE.Color('#2d6a4f');
-    const cRock = new THREE.Color('#6c757d');
-    const cSnow = new THREE.Color('#ffffff');
 
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
@@ -133,109 +126,140 @@ export function ProceduralTerrain({
       let y = 0;
 
       if (dist <= innerRadius) {
-        // Flat center island for characters
+        // Flat ground for the metropolis city
         y = 0;
       } else {
-        // Multi-octave mountain and valley noise
-        const n1 = simplex.fbm(x * 0.018, z * 0.018, 4, 2.0, 0.5);
-        const n2 = simplex.fbm(x * 0.045, z * 0.045, 2, 2.0, 0.4);
-        const mountainShape = Math.pow(Math.max(0, n1 + 0.35), 2.2) * 26.0 + n2 * 4.0;
-        const valleyDip = n1 * 5.0 - 2.5;
+        // 1. Broad Continental Mountain Ridges (Low-frequency rolling waves)
+        const nMajor = simplex.fbm(x * 0.0055, z * 0.0055, 3, 2.0, 0.5);
+        
+        // 2. Rolling Alpine Foothills & Peaks (Medium-frequency rounded noise)
+        const nRolling = simplex.fbm(x * 0.012, z * 0.012, 3, 2.1, 0.45);
 
-        const rawY = n1 > 0 ? mountainShape : valleyDip;
+        // 3. Smooth Non-Pointy Ridge Transformation (Plateau / Rolling Wave)
+        // Instead of sharp exponential powers (which cause needle spikes),
+        // we use soft sinusoidal wave curves and smoothed plateaus
+        const wave1 = Math.sin((nMajor + 0.4) * Math.PI * 0.85);
+        const wave2 = Math.cos((nRolling + 0.2) * Math.PI * 0.9);
+        
+        // Soft mountain elevation: scenic rolling hills and low-profile ridges
+        let mountainHeight = Math.max(0, wave1 * 0.65 + wave2 * 0.35);
+        mountainHeight = Math.pow(mountainHeight, 1.25) * 18.5;
 
-        // Smoothly blend from 0 at innerRadius to full height outside
-        const blend = Math.min(1.0, Math.max(0.0, (dist - innerRadius) / 10.0));
-        const smoothBlend = blend * blend * (3.0 - 2.0 * blend); // smoothstep
-        y = rawY * smoothBlend;
+        // Subtle terracing / stratification for clean low-poly aesthetic
+        const terraceStep = 2.5;
+        const terracedH = Math.floor(mountainHeight / terraceStep) * terraceStep;
+        const terraceFract = (mountainHeight % terraceStep) / terraceStep;
+        const smoothTerrace = terracedH + Math.pow(terraceFract, 2.0) * terraceStep;
+        mountainHeight = THREE.MathUtils.lerp(mountainHeight, smoothTerrace, 0.30);
+
+        // Coastal Valleys and Inlets
+        const valleyDip = (nMajor - 0.25) * 4.5;
+        const rawY = nMajor > -0.1 ? mountainHeight : valleyDip;
+
+        // Smooth transition from flat town border into gentle foothills and rolling ridges
+        const blendDist = Math.max(0.0, Math.min(1.0, (dist - innerRadius) / 32.0));
+        const smoothstepBlend = blendDist * blendDist * (3.0 - 2.0 * blendDist);
+        y = rawY * smoothstepBlend;
       }
 
       pos.setY(i, y);
     }
 
-    // Convert to non-indexed for crisp low-poly faceted flat shading
+    // Convert to non-indexed for crisp, beautiful faceted low-poly shading
     const nonIndexed = plane.toNonIndexed();
     nonIndexed.computeVertexNormals();
 
     const nonIndexedPos = nonIndexed.attributes.position;
+    const normals = nonIndexed.attributes.normal;
     const vertexColors = [];
 
-    // Assign biome colors per vertex based on height
+    // 🎨 Curated Lush Sunny Biome Palette (No Snow)
+    const cSand = new THREE.Color('#e9d8a6');          // Warm Golden Beach / Coast
+    const cGrass = new THREE.Color('#48bb35');         // Lush Lowland Meadow
+    const cHighlandGreen = new THREE.Color('#38b000'); // Sunny Highland Green
+    const cPineGreen = new THREE.Color('#2d6a4f');     // Deep Alpine Pine Forest
+    const cSlateRock = new THREE.Color('#5c677d');     // Steep Cliff Slate Rock
+    const cLightRock = new THREE.Color('#8d99ae');     // Sunny Rocky Outcrops & Ledges
+
     for (let i = 0; i < nonIndexedPos.count; i++) {
       const y = nonIndexedPos.getY(i);
       const x = nonIndexedPos.getX(i);
       const z = nonIndexedPos.getZ(i);
       const dist = Math.sqrt(x * x + z * z);
+      const ny = normals ? normals.getY(i) : 1.0; // Slope vertical normal: 1 = flat, < 0.7 = steep cliff
 
-      let color = cLushGrass;
+      let color = cGrass;
 
-      if (dist <= innerRadius + 1.0) {
-        color = cLushGrass;
-      } else if (y < -0.2) {
-        color = cSand; // Underwater sandy valley bed
-      } else if (y < 0.6) {
-        color = cSand; // Shore / Beach
-      } else if (y < 4.5) {
-        color = cLushGrass; // Lowland grass
-      } else if (y < 9.0) {
-        color = cDeepForest; // Highland forest
-      } else if (y < 14.5) {
-        color = cRock; // Mountain Rock
+      if (dist <= innerRadius + 2.0) {
+        color = cGrass;
+      } else if (y < 0.2) {
+        color = cSand; // Golden Shore / Beach
+      } else if (ny < 0.65 && y > 2.0) {
+        // Steep cliff face -> Slate Mountain Rock
+        color = y > 10.0 ? cLightRock : cSlateRock;
+      } else if (y < 5.0) {
+        color = cGrass; // Lowland rolling meadow
+      } else if (y < 11.0) {
+        color = cPineGreen; // Highland alpine pine forest
       } else {
-        color = cSnow; // Snow peak
+        color = cHighlandGreen; // Sunny lush green summit ridges
       }
 
       vertexColors.push(color.r, color.g, color.b);
     }
 
+
+
     nonIndexed.setAttribute('color', new THREE.Float32BufferAttribute(vertexColors, 3));
     return { geometry: nonIndexed };
   }, [innerRadius, outerSize, segments, seed]);
 
-  // Subtle animated ocean/lake ripples
+  // Subtle animated ocean ripples in valleys
   useFrame((state) => {
     if (!waterRef.current) return;
     const t = state.clock.getElapsedTime();
-    waterRef.current.position.y = -0.15 + Math.sin(t * 1.5) * 0.05;
+    waterRef.current.position.y = -0.12 + Math.sin(t * 1.2) * 0.04;
   });
 
   return (
     <group>
-      {/* ⛰️ Low-Poly Procedural Mountain Terrain with Biome Colors */}
+      {/* ⛰️ Beautiful Low-Poly Terraced & Rolling Mountain Ranges */}
       <mesh name="terrain-mesh" geometry={geometry} receiveShadow castShadow>
         <meshStandardMaterial
           vertexColors
-          roughness={0.82}
-          metalness={0.08}
+          roughness={0.78}
+          metalness={0.06}
           flatShading
         />
       </mesh>
 
-      {/* 🌊 Sparkling Stylized Water Layer Filling the Valleys */}
+      {/* 🌊 Crystal Turquoise Lagoon Water in Coastal Inlets */}
       <mesh
         ref={waterRef}
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.15, 0]}
+        position={[0, -0.12, 0]}
         receiveShadow
       >
-        <planeGeometry args={[outerSize * 1.1, outerSize * 1.1, 16, 16]} />
+        <planeGeometry args={[outerSize * 1.15, outerSize * 1.15, 16, 16]} />
         <meshStandardMaterial
           color="#00b4d8"
-          roughness={0.15}
-          metalness={0.7}
+          roughness={0.12}
+          metalness={0.65}
           transparent
-          opacity={0.78}
+          opacity={0.80}
         />
       </mesh>
 
-      {/* Deep Ocean Bed Sub-Plate */}
+      {/* Deep Sea Floor Sub-Layer */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -4.5, 0]}
+        position={[0, -6.0, 0]}
       >
-        <planeGeometry args={[outerSize * 1.2, outerSize * 1.2]} />
+        <planeGeometry args={[outerSize * 1.25, outerSize * 1.25]} />
         <meshStandardMaterial color="#0077b6" roughness={0.9} />
       </mesh>
     </group>
   );
 }
+
+export default ProceduralTerrain;

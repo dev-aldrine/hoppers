@@ -5,10 +5,9 @@ import {
   CartoonPineTree,
   CartoonOakTree,
   FlowerField,
-  SkyRainbow,
-  Butterflies,
 } from './EnvironmentProps';
 import { ProceduralTerrain } from './ProceduralTerrain';
+import { PumpTownCity } from './PumpTownCity';
 
 // Procedural Cartoon Floating Cloud with Safe Camera Proximity Dissolve
 function CartoonCloud({ position, scale = 1, speed = 0.5 }) {
@@ -18,8 +17,8 @@ function CartoonCloud({ position, scale = 1, speed = 0.5 }) {
   useFrame(({ camera }, delta) => {
     if (!ref.current) return;
     ref.current.position.x += speed * delta;
-    if (ref.current.position.x > 75) {
-      ref.current.position.x = -75;
+    if (ref.current.position.x > 110) {
+      ref.current.position.x = -110;
     }
 
     // ☁️ Dissolve only when camera is extremely close (< 6 units) to prevent interior clipping
@@ -68,96 +67,24 @@ function CartoonCloud({ position, scale = 1, speed = 0.5 }) {
   );
 }
 
-// Procedural 3D Cartoon Sun Model
-function CartoonSun({
-  position = [-2.0, 26.0, 32.0],
-  rotation = [0, 0, 0],
-  scale = 1.0,
-}) {
-  const sunRaysRef = useRef();
-
-  useFrame((_, delta) => {
-    if (sunRaysRef.current) {
-      sunRaysRef.current.rotation.z += 0.3 * delta;
-    }
-  });
-
-  const rays = useMemo(() => {
-    const arr = [];
-    const count = 10;
-    for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2;
-      arr.push({ angle });
-    }
-    return arr;
-  }, []);
-
-  return (
-    <group position={position} rotation={rotation} scale={scale}>
-      {/* Glowing Sun Center Sphere */}
-      <mesh>
-        <sphereGeometry args={[3.2, 32, 32]} />
-        <meshStandardMaterial
-          color="#ffb703"
-          emissive="#fb8500"
-          emissiveIntensity={1.2}
-          roughness={0.2}
-        />
-      </mesh>
-
-      {/* Rotating Sun Corona Rays */}
-      <group ref={sunRaysRef}>
-        {rays.map((r, i) => (
-          <group key={i} rotation={[0, 0, r.angle]}>
-            <mesh position={[0, 4.4, 0]}>
-              <coneGeometry args={[0.9, 2.2, 16]} />
-              <meshStandardMaterial
-                color="#ffd166"
-                emissive="#ffb703"
-                emissiveIntensity={0.9}
-                roughness={0.3}
-              />
-            </mesh>
-          </group>
-        ))}
-      </group>
-
-      {/* Soft Sun Aura Glow */}
-      <mesh>
-        <sphereGeometry args={[4.2, 24, 24]} />
-        <meshBasicMaterial
-          color="#ffb703"
-          transparent
-          opacity={0.18}
-          side={THREE.BackSide}
-        />
-      </mesh>
-    </group>
-  );
-}
-
 export function WorldArena({
   radius = 24,
-  sunPosition = [-2.0, 26.0, 32.0],
-  sunRotation = [0, 0, 0],
-  sunScale = 1.0,
-  rainbowPosition = [0, 15, -34],
-  rainbowRotation = [0, 0.26, 0],
-  rainbowRadius = 34,
+  launchedBuildings = {},
+  onSelectPlot,
 }) {
-  // Visible drifting clouds positioned around the arena horizon & sky
+  // Visible drifting clouds positioned high in the sky (height increased by 60%)
   const clouds = useMemo(
     () => [
-      { pos: [-38, 22, -28], scale: 2.2, speed: 0.75 },
-      { pos: [18, 26, -42], scale: 2.8, speed: 0.5 },
-      { pos: [-22, 25, 22], scale: 2.4, speed: 0.65 },
-      { pos: [34, 20, 28], scale: 2.0, speed: 0.85 },
-      { pos: [5, 28, 5], scale: 2.9, speed: 0.45 },
-      { pos: [-45, 19, 12], scale: 2.2, speed: 0.7 },
-      { pos: [38, 24, -20], scale: 2.4, speed: 0.6 },
-      { pos: [-12, 22, -45], scale: 3.0, speed: 0.4 },
-      { pos: [24, 26, 42], scale: 2.3, speed: 0.8 },
-      { pos: [-32, 24, 35], scale: 2.0, speed: 0.65 },
+      { pos: [-38, 35.2, -28], scale: 2.4, speed: 0.75 },
+      { pos: [18, 41.6, -42], scale: 3.0, speed: 0.5 },
+      { pos: [-22, 40.0, 22], scale: 2.6, speed: 0.65 },
+      { pos: [34, 32.0, 28], scale: 2.2, speed: 0.85 },
+      { pos: [5, 44.8, 5], scale: 3.2, speed: 0.45 },
+      { pos: [-45, 30.4, 12], scale: 2.4, speed: 0.7 },
+      { pos: [38, 38.4, -20], scale: 2.6, speed: 0.6 },
+      { pos: [-12, 35.2, -45], scale: 3.2, speed: 0.4 },
+      { pos: [24, 41.6, 42], scale: 2.5, speed: 0.8 },
+      { pos: [-32, 38.4, 35], scale: 2.2, speed: 0.65 },
     ],
     []
   );
@@ -165,14 +92,14 @@ export function WorldArena({
   // Perimeter Trees scattered naturally around the foothills and shoreline
   const perimeterTrees = useMemo(() => {
     const list = [];
-    const count = 20;
+    const count = 72;
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * Math.PI * 2 + (Math.sin(i * 2) * 0.18);
-      const r = radius * 0.88 + (Math.cos(i * 3) * 2.0);
+      const r = radius * 0.95 + (Math.cos(i * 3) * 3.5);
       const x = Math.cos(angle) * r;
       const z = Math.sin(angle) * r;
       const isPine = i % 2 === 0;
-      const scale = 1.0 + Math.random() * 0.5;
+      const scale = 1.2 + Math.random() * 0.8;
       list.push({ x, z, isPine, scale });
     }
     return list;
@@ -180,25 +107,11 @@ export function WorldArena({
 
   return (
     <group>
-      {/* 3D Sun Model */}
-      <CartoonSun
-        position={sunPosition}
-        rotation={sunRotation}
-        scale={sunScale}
-      />
-
-      {/* ⛰️🌊 Low-Poly Procedural Perlin Mountain & Water Terrain */}
+      {/* ⛰️🌊 Low-Poly Procedural Perlin Mountain & Water Terrain (Super Big Island) */}
       <ProceduralTerrain
-        innerRadius={radius + 4}
-        outerSize={190}
-        segments={85}
-      />
-
-      {/* 🌈 Dynamic Sky Rainbow Arc */}
-      <SkyRainbow
-        position={rainbowPosition}
-        rotation={rainbowRotation}
-        radius={rainbowRadius}
+        innerRadius={radius + 35}
+        outerSize={850}
+        segments={160}
       />
 
       {/* Clouds */}
@@ -206,11 +119,14 @@ export function WorldArena({
         <CartoonCloud key={i} position={c.pos} scale={c.scale} speed={c.speed} />
       ))}
 
-      {/* Colorful Flower Field */}
-      <FlowerField count={45} arenaRadius={radius} />
+      {/* 🏙️ PumpTown City: Town Hall, Buildings, Roads & Active Construction Plots */}
+      <PumpTownCity
+        launchedBuildings={launchedBuildings}
+        onSelectPlot={onSelectPlot}
+      />
 
-      {/* Fluttering Butterflies */}
-      <Butterflies count={12} arenaRadius={radius} />
+      {/* Colorful Flower Field */}
+      <FlowerField count={100} arenaRadius={radius} />
 
       {/* Perimeter Cartoon Pine & Oak Trees */}
       {perimeterTrees.map((tree, i) =>
@@ -231,3 +147,4 @@ export function WorldArena({
     </group>
   );
 }
+

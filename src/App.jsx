@@ -6,12 +6,13 @@ import { TradeFeed } from './components/ui/TradeFeed';
 import { BottomDock } from './components/ui/BottomDock';
 import { AdminModal } from './components/ui/AdminModal';
 import { InfoModal } from './components/ui/InfoModal';
+import { LaunchBuildingModal } from './components/ui/LaunchBuildingModal';
 import { CameraHint } from './components/ui/CameraHint';
 import growersLogo from './assets/growers_wordmark.png';
 import { createSolanaConnection } from './solana/heliusConnection';
 import { subscribeBondingCurve, subscribeRealtimeTrades, fetchTopHolders, fetchLiveSolPrice, fetchLiveMarketCapSnapshot } from './solana/pumpTracker';
 import { isValidPublicKey } from './solana/bondingCurve';
-import { getProjectSettings, fetchSharedSettings, saveProjectSettings } from './solana/phantomAuth';
+import { getProjectSettings, fetchSharedSettings, saveProjectSettings, usePhantomAuth } from './solana/phantomAuth';
 import {
   calculateTotalInches,
   calculatePrizePayout,
@@ -33,25 +34,18 @@ export default function App() {
   const [holders, setHolders] = useState([]);
 
   // Permanent Configs
-  const overallScale = 7.5;
+  const overallScale = 0.77; // Citizens 10% bigger
   const groundOffset = 0.2;
-  const sunPosition = [-2.0, 26.0, 32.0];
+  const sunPosition = [-2.0, 32.0, 38.0];
   const sunRotation = [0, 0, 0];
   const sunScale = 1.0;
-  const rainbowPosition = [-29.5, -1.5, -47.5];
+  const rainbowPosition = [-38.0, -1.5, -55.0];
   const rainbowRotation = [1.57, 0.17, -0.7];
-  const rainbowRadius = 33.0;
+  const rainbowRadius = 44.0;
 
   // Locked Tag Offsets
-  const tagOffsetY = -0.26;
-  const tagScale = 1.60;
-
-  // 🎯 Locked Market Cap Pivot Offsets (Anchored to Center Dick Midpoint)
-  const mcapDistance = 6.6;
-  const mcapOrbitAngle = -1.50;
-  const mcapHeightOffset = -1.0;
-  const mcapFacingAngle = 0.10;
-  const mcapScale = 0.95;
+  const tagOffsetY = 0.0;
+  const tagScale = 0.85;
 
   const [marketCapData, setMarketCapData] = useState({
     mcapUsd: 0,
@@ -64,6 +58,37 @@ export default function App() {
   const [selectedNpc, setSelectedNpc] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+
+  // 🏗️ Building Launching & Phantom Wallet State
+  const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
+  const [selectedPlotForLaunch, setSelectedPlotForLaunch] = useState(null);
+  const [launchedBuildings, setLaunchedBuildings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pumptown_launched_buildings');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+  });
+
+  const {
+    walletAddress,
+    isConnecting: isWalletConnecting,
+    connectWallet,
+    disconnectWallet,
+  } = usePhantomAuth();
+
+  const handleSaveLaunchedBuilding = (newBuilding) => {
+    setLaunchedBuildings((prev) => {
+      const updated = {
+        ...prev,
+        [newBuilding.plotId]: newBuilding,
+      };
+      try {
+        localStorage.setItem('pumptown_launched_buildings', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
 
   // 🧭 Slug Routing & Admin Modal State
   const [currentSlug, setCurrentSlug] = useState(() => {
@@ -78,32 +103,6 @@ export default function App() {
     return localStorage.getItem('secret_admin_unlocked') === 'true';
   });
 
-  // 🎵 Background Audio Auto-play on user gesture / mount
-  useEffect(() => {
-    soundManager.playBgm();
-
-    const handleFirstGesture = () => {
-      soundManager.playBgm();
-      window.removeEventListener('click', handleFirstGesture);
-      window.removeEventListener('touchstart', handleFirstGesture);
-      window.removeEventListener('keydown', handleFirstGesture);
-    };
-
-    window.addEventListener('click', handleFirstGesture);
-    window.addEventListener('touchstart', handleFirstGesture);
-    window.addEventListener('keydown', handleFirstGesture);
-
-    return () => {
-      window.removeEventListener('click', handleFirstGesture);
-      window.removeEventListener('touchstart', handleFirstGesture);
-      window.removeEventListener('keydown', handleFirstGesture);
-    };
-  }, []);
-
-  const handleToggleMute = () => {
-    const nextMuted = soundManager.toggleMute();
-    setIsMuted(nextMuted);
-  };
 
   useEffect(() => {
     const handleLocationChange = () => {
@@ -253,7 +252,7 @@ export default function App() {
         }
 
         const angle = Math.random() * Math.PI * 2;
-        const radius = Math.random() * 14 + 2;
+        const radius = Math.random() * 60 + 2;
         const posX = Math.cos(angle) * radius;
         const posZ = Math.sin(angle) * radius;
         const skinIndex = solAmount >= 5.0 ? 5 : solAmount >= 2.0 ? 6 : Math.floor(Math.random() * 11);
@@ -582,37 +581,61 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* 3D WebGL Scene with Hopping Dick NPCs */}
+      {/* 3D WebGL Scene with Walking Player NPCs & Construction Plots */}
       <Scene3D
         npcs={enrichedNpcs}
         selectedNpcId={selectedNpc?.id || null}
         onSelectNpc={(npc) => setSelectedNpc(npc)}
-        marketCap={marketCapData?.mcapUsd ?? 0}
-        mcapDistance={mcapDistance}
-        mcapOrbitAngle={mcapOrbitAngle}
-        mcapHeightOffset={mcapHeightOffset}
-        mcapFacingAngle={mcapFacingAngle}
-        mcapScale={mcapScale}
-        arenaRadius={28}
+        arenaRadius={140}
         overallScale={overallScale}
         groundOffset={groundOffset}
         tagOffsetY={tagOffsetY}
         tagScale={tagScale}
-        sunPosition={sunPosition}
-        sunRotation={sunRotation}
-        sunScale={sunScale}
-        rainbowPosition={rainbowPosition}
-        rainbowRotation={rainbowRotation}
-        rainbowRadius={rainbowRadius}
+        launchedBuildings={launchedBuildings}
+        onSelectPlot={(plot) => {
+          setSelectedPlotForLaunch(plot.id);
+          setIsLaunchModalOpen(true);
+        }}
       />
 
-      {/* 🌟 Top Center Rebranded GROWERS Logo */}
+      {/* 🌟 Top Center PUMPTOWN City Logo */}
       <div className="top-center-brand-logo">
         <img
-          src={growersLogo}
-          alt="GROWERS"
-          className="brand-logo-img"
+          src="/images/pumptown_logo.png"
+          alt="PUMPTOWN"
+          className="pumptown-hero-logo"
         />
+      </div>
+
+      {/* 🏗️ Top Right "Launch a Building" Phantom Action Button */}
+      <div className="top-right-header-actions">
+        <button
+          type="button"
+          className="btn-launch-building-top"
+          onClick={() => {
+            setSelectedPlotForLaunch(null);
+            setIsLaunchModalOpen(true);
+          }}
+          title="Connect Phantom Wallet & Launch a Building in Pumptown"
+        >
+          <div className="btn-launch-left">
+            <span className="btn-launch-icon">🏗️</span>
+            <span className="btn-launch-title">Launch a Building</span>
+          </div>
+          <div className="btn-launch-right">
+            {walletAddress ? (
+              <span className="wallet-chip-active">
+                <span className="wallet-chip-dot" />
+                <span>{walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}</span>
+              </span>
+            ) : (
+              <span className="wallet-chip-connect">
+                <span className="phantom-icon-small">👻</span>
+                <span>Connect</span>
+              </span>
+            )}
+          </div>
+        </button>
       </div>
 
       {/* UI Widgets Overlay */}
@@ -645,11 +668,9 @@ export default function App() {
       {/* 🧭 Interactive 3D Camera Controls Hint */}
       <CameraHint />
 
-      {/* 🚀 Floating Bottom Center Dock (CA + Copy, X, Telegram, Pump.fun, About, Mute, Admin) */}
+      {/* 🚀 Floating Bottom Center Dock (CA + Copy, Pump.fun, About) */}
       <BottomDock
         settings={settings}
-        isMuted={isMuted}
-        onToggleMute={handleToggleMute}
         onOpenAbout={() => setIsAboutOpen(true)}
       />
 
@@ -657,6 +678,20 @@ export default function App() {
       {isAboutOpen && (
         <InfoModal onClose={() => setIsAboutOpen(false)} />
       )}
+
+      {/* 🏗️ Launch a Building Modal (Phantom Wallet Gated / Web3 Builder) */}
+      <LaunchBuildingModal
+        isOpen={isLaunchModalOpen}
+        onClose={() => setIsLaunchModalOpen(false)}
+        walletAddress={walletAddress}
+        isConnecting={isWalletConnecting}
+        onConnectWallet={connectWallet}
+        onDisconnectWallet={disconnectWallet}
+        selectedPlotId={selectedPlotForLaunch}
+        launchedBuildings={launchedBuildings}
+        onLaunchBuilding={handleSaveLaunchedBuilding}
+        settings={settings}
+      />
 
       {/* 🔐 Admin Control Modal (Phantom Gated on /pukinginamo slug or 'y' shortcut) */}
       {(currentSlug === '/pukinginamo' || isAdminOpen) && (

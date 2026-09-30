@@ -4,12 +4,12 @@ import ReactDOM from 'react-dom/client';
 import * as THREE from 'three';
 
 /**
- * 🛡️ SafeHtml: High-performance 3D-to-2D overlay component for React 19 + R3F
- * - Fixes React 19 "Attempted to synchronously unmount a root while React was already rendering"
+ * 🛡️ SafeHtml: High-performance 3D-to-2D overlay component for React 18/19 + R3F
+ * - Fixes "Attempted to synchronously unmount a root while React was already rendering"
  * - Automatically projects 3D coordinates to screen space
  * - Handles camera frustum clipping & distance factor scaling
- * - ⛰️☁️ Raycasting Occlusion: Automatically hides/fades behind mountains, clouds, trees & terrain
- * - Defers ReactDOMRoot unmounting safely to the next tick
+ * - ⛰️ Raycasting Occlusion: Automatically hides/fades behind mountains, clouds, trees & terrain
+ * - Defers ReactDOMRoot unmounting safely via setTimeout to prevent render-phase race conditions
  */
 export function SafeHtml({
   children,
@@ -20,6 +20,7 @@ export function SafeHtml({
   style = {},
   className = '',
   zIndexRange = [100, 0],
+  pointerEvents = 'none',
 }) {
   const { gl, scene, camera, size } = useThree();
   const groupRef = useRef();
@@ -28,7 +29,7 @@ export function SafeHtml({
   const isMountedRef = useRef(true);
   const currentOpacityRef = useRef(1);
 
-  // Initialize DOM container & React 19 sub-root
+  // Initialize DOM container & React 18/19 sub-root
   useLayoutEffect(() => {
     isMountedRef.current = true;
     const parent = gl.domElement?.parentElement || document.body;
@@ -38,7 +39,7 @@ export function SafeHtml({
     el.style.position = 'absolute';
     el.style.top = '0';
     el.style.left = '0';
-    el.style.pointerEvents = 'none';
+    el.style.pointerEvents = style?.pointerEvents || pointerEvents;
     el.style.userSelect = 'none';
     el.style.willChange = 'transform, opacity';
     el.style.transformOrigin = center ? 'center center' : 'top left';
@@ -54,7 +55,7 @@ export function SafeHtml({
       if (el.parentNode) {
         el.parentNode.removeChild(el);
       }
-      // Defer unmount to avoid React 19 synchronous unmount during render error
+      // Safely defer unmount to next tick to avoid synchronous unmount during render
       setTimeout(() => {
         try {
           root.unmount();
@@ -74,7 +75,7 @@ export function SafeHtml({
         </div>
       );
     }
-  }, [children, style, className]);
+  });
 
   // Vector & Raycaster caches to avoid per-frame allocations
   const tempV = useRef(new THREE.Vector3()).current;
@@ -98,52 +99,54 @@ export function SafeHtml({
       return;
     }
 
-    // ⛰️☁️ Raycast Occlusion Check (Evaluated smoothly every 2 frames for 60fps performance)
-    frameCount.current++;
-    if (occlude && (frameCount.current % 2 === 0)) {
-      const dist = camera.position.distanceTo(worldPos);
-      rayDir.subVectors(worldPos, camera.position).normalize();
-      raycaster.set(camera.position, rayDir);
-      raycaster.near = 0.5;
-      raycaster.far = Math.max(0.1, dist - 0.4);
+    // ⛰️ Raycast Occlusion Check (Evaluated smoothly every 2 frames for 60fps performance)
+    if (occlude) {
+      frameCount.current++;
+      if (frameCount.current % 2 === 0) {
+        const dist = camera.position.distanceTo(worldPos);
+        rayDir.subVectors(worldPos, camera.position).normalize();
+        raycaster.set(camera.position, rayDir);
+        raycaster.near = 0.5;
+        raycaster.far = Math.max(0.1, dist - 0.4);
 
-      const hits = raycaster.intersectObjects(scene.children, true);
-      let occluded = false;
+        const hits = raycaster.intersectObjects(scene.children, true);
+        let occludedHit = false;
 
-      for (let i = 0; i < hits.length; i++) {
-        const obj = hits[i].object;
-        if (!obj.isMesh || !obj.visible) continue;
+        for (let i = 0; i < hits.length; i++) {
+          const obj = hits[i].object;
+          if (!obj.isMesh || !obj.visible) continue;
 
-        // Verify hit isn't part of this character's own hierarchy
-        let p = obj;
-        let isSelf = false;
-        while (p) {
-          if (p === groupRef.current || p === groupRef.current.parent) {
-            isSelf = true;
+          // Verify hit isn't part of this character/plot hierarchy
+          let p = obj;
+          let isSelf = false;
+          while (p) {
+            if (p === groupRef.current || p === groupRef.current.parent) {
+              isSelf = true;
+              break;
+            }
+            p = p.parent;
+          }
+
+          if (!isSelf && hits[i].distance < dist - 0.5) {
+            occludedHit = true;
             break;
           }
-          p = p.parent;
         }
-
-        if (!isSelf && hits[i].distance < dist - 0.5) {
-          occluded = true;
-          break;
-        }
+        isOccludedRef.current = occludedHit;
       }
-      isOccludedRef.current = occluded;
-    }
 
-    // Smooth opacity transition for clean occlusions
-    const targetOpacity = isOccludedRef.current ? 0 : 1;
-    currentOpacityRef.current += (targetOpacity - currentOpacityRef.current) * 0.25;
+      // Smooth opacity transition for clean occlusions
+      const targetOpacity = isOccludedRef.current ? 0 : 1;
+      currentOpacityRef.current += (targetOpacity - currentOpacityRef.current) * 0.25;
 
-    if (currentOpacityRef.current < 0.03) {
-      elementRef.current.style.display = 'none';
-      return;
+      if (currentOpacityRef.current < 0.03) {
+        elementRef.current.style.display = 'none';
+        return;
+      }
+      elementRef.current.style.opacity = currentOpacityRef.current.toFixed(3);
     }
 
     elementRef.current.style.display = 'block';
-    elementRef.current.style.opacity = currentOpacityRef.current.toFixed(3);
 
     const x = (tempV.x * 0.5 + 0.5) * size.width;
     const y = (-tempV.y * 0.5 + 0.5) * size.height;
@@ -151,7 +154,7 @@ export function SafeHtml({
     let scale = 1;
     if (distanceFactor) {
       const dist = camera.position.distanceTo(worldPos);
-      scale = (distanceFactor / Math.max(0.1, dist));
+      scale = distanceFactor / Math.max(0.1, dist);
     }
 
     const translate = center

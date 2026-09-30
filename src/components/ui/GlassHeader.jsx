@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, Shield, Copy, Check, ExternalLink, Send, Sparkles } from 'lucide-react';
-import { soundManager } from '../../audio/soundEffects';
+import { Shield, Copy, Check, ExternalLink, Sparkles } from 'lucide-react';
 
 export function GlassHeader({
   settings,
   onOpenAdmin,
-  isMuted,
-  onToggleMute,
   npcCount,
 }) {
   const [copied, setCopied] = useState(false);
@@ -52,39 +49,6 @@ export function GlassHeader({
           <span><b>{npcCount}</b> Active Hoppers</span>
         </div>
 
-        {/* Sound Toggle */}
-        <button
-          className={`icon-btn ${isMuted ? 'muted' : 'active'}`}
-          onClick={onToggleMute}
-          title={isMuted ? 'Unmute Audio FX' : 'Mute Audio FX'}
-        >
-          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-        </button>
-
-        {/* Social Links */}
-        {settings?.telegramUrl && (
-          <a
-            href={settings.telegramUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="icon-btn social"
-            title="Telegram Community"
-          >
-            <Send size={18} />
-          </a>
-        )}
-
-        {settings?.twitterUrl && (
-          <a
-            href={settings.twitterUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="icon-btn social"
-            title="X (Twitter)"
-          >
-            <span style={{ fontWeight: 800, fontSize: '15px' }}>𝕏</span>
-          </a>
-        )}
 
         {/* Pump.fun Direct Link */}
         {settings?.mintAddress && (

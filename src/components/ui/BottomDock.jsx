@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Volume2, VolumeX, Send, HelpCircle } from 'lucide-react';
+import { Copy, Check, HelpCircle } from 'lucide-react';
 import { isValidPublicKey } from '../../solana/bondingCurve';
 
 export function BottomDock({ settings, isMuted = false, onToggleMute, onOpenAbout }) {
@@ -17,8 +17,6 @@ export function BottomDock({ settings, isMuted = false, onToggleMute, onOpenAbou
     }
   };
 
-  const twitterUrl = settings?.twitterUrl || 'https://x.com/Growers_sol';
-  const telegramUrl = settings?.telegramUrl || 'https://t.me/GrowersOnSol';
   const pumpfunUrl = isRealCA ? `https://pump.fun/${rawMint}` : 'https://pump.fun';
 
   return (
@@ -46,30 +44,8 @@ export function BottomDock({ settings, isMuted = false, onToggleMute, onOpenAbou
         </button>
       )}
 
-      {/* 🌐 Social, Trading, Info & Audio Buttons */}
+      {/* 🌐 Trading, Info & Audio Buttons */}
       <div className="dock-social-group standalone">
-        {/* X (Twitter) */}
-        <a
-          href={twitterUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="dock-icon-btn dock-x"
-          title="X (Twitter)"
-        >
-          <span className="dock-x-icon">𝕏</span>
-        </a>
-
-        {/* Telegram */}
-        <a
-          href={telegramUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="dock-icon-btn dock-tg"
-          title="Telegram Community"
-        >
-          <Send size={15} />
-        </a>
-
         {/* Pump.fun Direct Circular Button */}
         <a
           href={pumpfunUrl}
@@ -96,16 +72,6 @@ export function BottomDock({ settings, isMuted = false, onToggleMute, onOpenAbou
             <HelpCircle size={16} />
           </button>
         )}
-
-        {/* 🔊 Audio / Music Mute Toggle Button */}
-        <button
-          type="button"
-          onClick={onToggleMute}
-          className={`dock-icon-btn dock-audio ${isMuted ? 'muted' : 'active'}`}
-          title={isMuted ? 'Unmute BGM Music' : 'Mute BGM Music'}
-        >
-          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-        </button>
       </div>
     </div>
   );

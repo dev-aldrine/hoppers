@@ -1,8 +1,8 @@
 {
   "adminWallet": "3Pxv5rZVxFoBBFf57yE6opeyqqNbDWBGnB4TzvFBQwDN",
-  "mintAddress": "G5YWyJUz1QNyMDPr47mJYsDX3LxWQEDJokTwxTuoh1fK",
+  "mintAddress": "Coming Soon",
   "heliusApiKey": "aac38acb-66a6-4494-870e-8bb5c14c051a",
-  "solUsdPrice": 119.7,
+  "solUsdPrice": 119.3,
   "minSpawnSol": 0.01,
   "telegramUrl": "",
   "twitterUrl": "https://x.com/Growers_sol",
@@ -42,5 +42,5 @@
       "wonAt": 1790623236481
     }
   ],
-  "updatedAt": 1790677572418
+  "updatedAt": 1790762012801
 }

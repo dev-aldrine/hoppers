@@ -222,7 +222,13 @@ export function subscribeRealtimeTrades(connection, mintAddress, onTrade, getSol
     isClosed = true;
     if (ws) {
       try {
-        ws.close();
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        } else if (ws.readyState === WebSocket.CONNECTING) {
+          ws.onopen = () => {
+            try { ws.close(); } catch (e) {}
+          };
+        }
       } catch (e) {}
     }
   };

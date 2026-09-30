@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Compass, ZoomIn, MousePointerClick, X } from 'lucide-react';
+import { Compass, ZoomIn, X } from 'lucide-react';
 
 export function CameraHint() {
   const [visible, setVisible] = useState(true);
@@ -60,16 +60,6 @@ export function CameraHint() {
           </span>
         </div>
 
-        <div className="hint-separator" />
-
-        <div className="camera-hint-item">
-          <div className="hint-icon-badge">
-            <MousePointerClick size={15} />
-          </div>
-          <span className="hint-text">
-            <b>Click</b> hopper to inspect
-          </span>
-        </div>
 
         <button
           className="btn-hint-close"
