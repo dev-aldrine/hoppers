@@ -4119,6 +4119,482 @@ body, html {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 
+/* ==========================================================================
+   👑 TOP CROWNED KING OF THE MOUNTAIN HUD
+   ========================================================================== */
+.top-crowned-hud {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  pointer-events: auto;
+}
+
+.crowned-hud-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(10, 16, 28, 0.94);
+  backdrop-filter: blur(16px);
+  border: 2px solid #ffd166;
+  border-radius: 100px;
+  padding: 8px 14px 8px 18px;
+  box-shadow: 0 0 35px rgba(255, 209, 102, 0.45), 0 12px 40px rgba(0, 0, 0, 0.85);
+  transition: all 0.25s ease;
+}
+
+.crowned-hud-card:hover {
+  border-color: #00f5d4;
+  box-shadow: 0 0 45px rgba(0, 245, 212, 0.55), 0 16px 48px rgba(0, 0, 0, 0.9);
+}
+
+.crowned-hud-crown {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 10px rgba(255, 209, 102, 0.8));
+  animation: floatBounce 2.5s ease-in-out infinite;
+}
+
+@keyframes floatBounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(4deg); }
+}
+
+.crowned-hud-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.crowned-hud-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crowned-hud-title {
+  font-family: var(--font-heading, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #ffd166;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.crowned-hud-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.62rem;
+  font-weight: 800;
+  background: rgba(255, 209, 102, 0.2);
+  color: #ffd166;
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.crowned-hud-details {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.crowned-king-wallet {
+  font-family: var(--font-mono, monospace);
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.crowned-hud-dot {
+  color: #64748b;
+}
+
+.crowned-buy-tag {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: #00f5d4;
+}
+
+/* ⏱️ Timer Box */
+.crowned-hud-timer-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 85px;
+  padding: 0 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.crowned-timer-num {
+  font-family: var(--font-mono, monospace);
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #00f5d4;
+  letter-spacing: -0.02em;
+}
+
+.crowned-timer-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.crowned-timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00f5d4 0%, #ffd166 100%);
+  border-radius: 100px;
+  transition: width 0.1s linear;
+}
+
+.crowned-timer-fill.urgent {
+  background: linear-gradient(90deg, #ff0055 0%, #ff5400 100%);
+  animation: pulseUrgent 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulseUrgent {
+  0% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Bounty Pool */
+.crowned-hud-bounty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 6px;
+}
+
+.crowned-bounty-label {
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.crowned-bounty-val {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #ffd166;
+}
+
+/* Dethrone CTA Button */
+.btn-dethrone-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #ffd166 0%, #ff9f1c 100%);
+  color: #0b0f19;
+  font-size: 0.88rem;
+  font-weight: 900;
+  padding: 10px 18px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255, 209, 102, 0.4);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-dethrone-cta:hover {
+  transform: scale(1.06);
+  box-shadow: 0 6px 24px rgba(255, 209, 102, 0.65);
+}
+
+/* ==========================================================================
+   🏔️ 3D SUMMIT OVERHEAD BADGE
+   ========================================================================== */
+.king-summit-overhead-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 16, 28, 0.95);
+  backdrop-filter: blur(16px);
+  border: 2.5px solid #ffd166;
+  border-radius: 18px;
+  padding: 14px 22px;
+  color: #ffffff;
+  box-shadow: 0 0 40px rgba(255, 209, 102, 0.6), 0 16px 45px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.king-badge-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.king-badge-crown-icon {
+  font-size: 1.7rem;
+  filter: drop-shadow(0 0 8px rgba(255, 209, 102, 0.8));
+}
+
+.king-badge-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.king-badge-realm-title {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.74rem;
+  font-weight: 900;
+  color: #ffd166;
+  letter-spacing: 0.1em;
+}
+
+.king-badge-wallet {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.king-timer-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.king-timer-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.king-timer-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.king-timer-clock {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #00f5d4;
+}
+
+.king-timer-clock.urgent {
+  color: #ff0055;
+}
+
+.king-timer-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.king-timer-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00f5d4, #ffd166);
+  border-radius: 6px;
+  transition: width 0.1s linear;
+}
+
+.king-timer-bar-fill.urgent {
+  background: #ff0055;
+}
+
+.king-bounty-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 209, 102, 0.15);
+  border: 1px solid rgba(255, 209, 102, 0.4);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.74rem;
+  color: #cbd5e1;
+}
+
+.king-bounty-chip strong {
+  color: #ffd166;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+}
+
+/* ==========================================================================
+   ⚔️ CHALLENGE / DETHRONE MODAL
+   ========================================================================== */
+.challenge-modal {
+  max-width: 520px;
+}
+
+.challenge-king-spotlight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.12) 0%, rgba(0, 245, 212, 0.06) 100%);
+  border: 1.5px solid rgba(255, 209, 102, 0.35);
+  border-radius: 14px;
+  padding: 14px 18px;
+}
+
+.challenge-crown-icon {
+  font-size: 2.2rem;
+  filter: drop-shadow(0 0 10px rgba(255, 209, 102, 0.8));
+}
+
+.challenge-king-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.challenge-king-sub {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.challenge-king-name {
+  font-family: var(--font-mono, monospace);
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #ffd166;
+}
+
+.challenge-king-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.challenge-rules-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rules-card-title {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.rules-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.rules-list strong {
+  color: #ffd166;
+}
+
+.challenge-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.challenge-presets-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.preset-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 8px 0;
+  color: #ffffff;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-btn:hover {
+  background: rgba(255, 209, 102, 0.15);
+  border-color: #ffd166;
+}
+
+.preset-btn.active {
+  background: rgba(255, 209, 102, 0.25);
+  border-color: #ffd166;
+  color: #ffd166;
+  box-shadow: 0 0 12px rgba(255, 209, 102, 0.35);
+}
+
+.custom-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.custom-input-wrap .launch-text-input {
+  padding-right: 50px;
+}
+
+.input-unit-tag {
+  position: absolute;
+  right: 14px;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #ffd166;
+}
+
+.challenge-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-demo-challenge {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-demo-challenge:hover {
+  background: rgba(0, 245, 212, 0.15);
+  border-color: #00f5d4;
+  color: #00f5d4;
+}
+
+.crown-btn {
+  background: linear-gradient(135deg, #ffd166 0%, #ff9f1c 100%) !important;
+  color: #0b0f19 !important;
+}
+
+
 
 
 

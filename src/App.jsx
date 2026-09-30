@@ -22,6 +22,8 @@ import {
 } from './solana/growthMechanics';
 import { soundManager } from './audio/soundEffects';
 
+import { ChallengeKingModal } from './components/ui/ChallengeKingModal';
+
 // Clean initial states
 const INITIAL_DEMO_NPCS = [];
 const INITIAL_TRADES = [];
@@ -34,14 +36,8 @@ export default function App() {
   const [holders, setHolders] = useState([]);
 
   // Permanent Configs
-  const overallScale = 0.77; // Citizens 10% bigger
+  const overallScale = 0.77;
   const groundOffset = 0.2;
-  const sunPosition = [-2.0, 32.0, 38.0];
-  const sunRotation = [0, 0, 0];
-  const sunScale = 1.0;
-  const rainbowPosition = [-38.0, -1.5, -55.0];
-  const rainbowRotation = [1.57, 0.17, -0.7];
-  const rainbowRadius = 44.0;
 
   // Locked Tag Offsets
   const tagOffsetY = 0.0;
@@ -58,16 +54,38 @@ export default function App() {
   const [selectedNpc, setSelectedNpc] = useState(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isChallengeModalOpen, setIsChallengeModalOpen] = useState(false);
 
-  // 🏗️ Building Launching & Phantom Wallet State
-  const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
-  const [selectedPlotForLaunch, setSelectedPlotForLaunch] = useState(null);
-  const [launchedBuildings, setLaunchedBuildings] = useState(() => {
+  // 👑 CROWNED: King of the Mountain State
+  const [crownedKing, setCrownedKing] = useState(() => {
     try {
-      const saved = localStorage.getItem('pumptown_launched_buildings');
+      const saved = localStorage.getItem('crowned_king_data');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
-    return {};
+    return {
+      id: 'init-king',
+      wallet: '3Pxv5rZVxFoBBFf57yE6opeyqqNbDWBGnB4TzvFBQwDN',
+      buyAmountSol: 0.25,
+      crownedAt: Date.now(),
+    };
+  });
+
+  const [timerSeconds, setTimerSeconds] = useState(60.0);
+  const [timerDuration] = useState(60.0);
+  const [accumulatedFeesSol, setAccumulatedFeesSol] = useState(() => {
+    try {
+      const saved = localStorage.getItem('crowned_accumulated_fees');
+      if (saved) return Number(saved);
+    } catch (e) {}
+    return 0.45;
+  });
+  const [fallenKings, setFallenKings] = useState([]);
+  const [winnerHistory, setWinnerHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('crowned_winners_history');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
   });
 
   const {
@@ -77,17 +95,110 @@ export default function App() {
     disconnectWallet,
   } = usePhantomAuth();
 
-  const handleSaveLaunchedBuilding = (newBuilding) => {
-    setLaunchedBuildings((prev) => {
-      const updated = {
-        ...prev,
-        [newBuilding.plotId]: newBuilding,
-      };
+  // ⏱️ 60-Second Countdown Timer Loop
+  useEffect(() => {
+    const timerInterval = setInterval(() => {
+      setTimerSeconds((prev) => {
+        if (prev <= 0.15) {
+          // 👑 60s Victory Achieved! Fees redirected to current King!
+          handleKingWin();
+          return 60.0;
+        }
+        return Math.max(0, Number((prev - 0.1).toFixed(1)));
+      });
+    }, 100);
+
+    return () => clearInterval(timerInterval);
+  }, [crownedKing, accumulatedFeesSol]);
+
+  const handleKingWin = () => {
+    if (!crownedKing) return;
+
+    const winRecord = {
+      id: `win-${Date.now()}`,
+      wallet: crownedKing.wallet,
+      solWon: accumulatedFeesSol,
+      wonAt: Date.now(),
+    };
+
+    setWinnerHistory((prev) => {
+      const updated = [winRecord, ...prev.slice(0, 19)];
       try {
-        localStorage.setItem('pumptown_launched_buildings', JSON.stringify(updated));
+        localStorage.setItem('crowned_winners_history', JSON.stringify(updated));
       } catch (e) {}
       return updated;
     });
+
+    // 🎆 Victory Celebrations
+    confetti({
+      particleCount: 160,
+      spread: 100,
+      origin: { y: 0.5 },
+      colors: ['#ffd166', '#ffb703', '#00f5d4', '#f72585'],
+    });
+    soundManager?.playPrizePoolClaim?.();
+
+    // Reset fee accumulation to seed
+    setAccumulatedFeesSol(0.05);
+    try {
+      localStorage.setItem('crowned_accumulated_fees', '0.05');
+    } catch (e) {}
+  };
+
+  // 💥 Dethrone the current King and crown the new buyer (minimum 0.25 SOL)
+  const dethroneKing = (buyerWallet, solAmount) => {
+    const amount = Number(solAmount) || 0.25;
+    if (amount < 0.25) return;
+
+    // 1. Add current king to falling queue for knockoff physics
+    if (crownedKing) {
+      setFallenKings((prev) => [
+        ...prev,
+        {
+          id: `fallen-${Date.now()}-${Math.random()}`,
+          wallet: crownedKing.wallet,
+          timestamp: Date.now(),
+        },
+      ]);
+    }
+
+    // 2. Crown new King
+    const newKing = {
+      id: `king-${Date.now()}`,
+      wallet: buyerWallet,
+      buyAmountSol: amount,
+      crownedAt: Date.now(),
+    };
+    setCrownedKing(newKing);
+    try {
+      localStorage.setItem('crowned_king_data', JSON.stringify(newKing));
+    } catch (e) {}
+
+    // 3. Reset 60s Timer
+    setTimerSeconds(60.0);
+
+    // 4. Add fee accumulation to prize pot
+    const feeAdded = Math.max(0.015, amount * 0.05);
+    setAccumulatedFeesSol((prev) => {
+      const updated = Number((prev + feeAdded).toFixed(3));
+      try {
+        localStorage.setItem('crowned_accumulated_fees', String(updated));
+      } catch (e) {}
+      return updated;
+    });
+
+    // 5. Sound & Dethrone Effects
+    soundManager?.playBuyChime?.();
+    confetti({
+      particleCount: 90,
+      spread: 80,
+      origin: { y: 0.55 },
+      colors: ['#ffd166', '#00f5d4', '#ff0055', '#7209b7'],
+    });
+  };
+
+  const handleRemoveFallenKing = (id) => {
+    setFallenKings((prev) => prev.filter((k) => k.id !== id));
   };
 
   // 🧭 Slug Routing & Admin Modal State
@@ -236,6 +347,11 @@ export default function App() {
 
     setTrades((prev) => [newTrade, ...prev.slice(0, 19)]);
 
+    if (txType === 'buy' && solAmount >= 0.25) {
+      // 👑 Automatic King Dethroning on >= 0.25 SOL Buy!
+      dethroneKing(traderWallet || shortWallet, solAmount);
+    }
+
     if (txType === 'buy' && solAmount >= (settings.minSpawnSol || 0.01)) {
       setNpcs((prev) => {
         const existingIdx = prev.findIndex(
@@ -252,7 +368,7 @@ export default function App() {
         }
 
         const angle = Math.random() * Math.PI * 2;
-        const radius = Math.random() * 60 + 2;
+        const radius = Math.random() * 60 + 45;
         const posX = Math.cos(angle) * radius;
         const posZ = Math.sin(angle) * radius;
         const skinIndex = solAmount >= 5.0 ? 5 : solAmount >= 2.0 ? 6 : Math.floor(Math.random() * 11);
@@ -279,7 +395,7 @@ export default function App() {
         soundManager.playBuyChime();
       }
     }
-  }, [settings.minSpawnSol]);
+  }, [settings.minSpawnSol, crownedKing]);
 
   // Subscribe to live Pump bonding curve updates, trades & holders (Restarts on CA change)
   useEffect(() => {
@@ -542,8 +658,8 @@ export default function App() {
   }, [settings.mintAddress]);
 
   const timerMinutes = Math.floor(caTimerLeftMs / 60000);
-  const timerSeconds = Math.floor((caTimerLeftMs % 60000) / 1000);
-  const formattedTimer = `${timerMinutes.toString().padStart(2, '0')}:${timerSeconds.toString().padStart(2, '0')}`;
+  const caSeconds = Math.floor((caTimerLeftMs % 60000) / 1000);
+  const formattedTimer = `${timerMinutes.toString().padStart(2, '0')}:${caSeconds.toString().padStart(2, '0')}`;
 
   // Enriched NPCs with winner details and race params
   const enrichedNpcs = useMemo(() => {
@@ -581,7 +697,7 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* 3D WebGL Scene with Walking Player NPCs & Construction Plots */}
+      {/* 3D WebGL Scene with Crown Mountain & Walking Contender NPCs */}
       <Scene3D
         npcs={enrichedNpcs}
         selectedNpcId={selectedNpc?.id || null}
@@ -591,51 +707,60 @@ export default function App() {
         groundOffset={groundOffset}
         tagOffsetY={tagOffsetY}
         tagScale={tagScale}
-        launchedBuildings={launchedBuildings}
-        onSelectPlot={(plot) => {
-          setSelectedPlotForLaunch(plot.id);
-          setIsLaunchModalOpen(true);
-        }}
+        crownedKing={crownedKing}
+        timerSeconds={timerSeconds}
+        timerDuration={timerDuration}
+        accumulatedFeesSol={accumulatedFeesSol}
+        fallenKings={fallenKings}
+        onRemoveFallenKing={handleRemoveFallenKing}
       />
 
-      {/* 🌟 Top Center PUMPTOWN City Logo */}
-      <div className="top-center-brand-logo">
-        <img
-          src="/images/pumptown_logo.png"
-          alt="PUMPTOWN"
-          className="pumptown-hero-logo"
-        />
-      </div>
+      {/* 👑 Top Center CROWNED King of the Mountain HUD */}
+      <div className="top-crowned-hud">
+        <div className="crowned-hud-card">
+          <div className="crowned-hud-crown">👑</div>
+          <div className="crowned-hud-info">
+            <div className="crowned-hud-title-row">
+              <span className="crowned-hud-title">KING OF THE MOUNTAIN</span>
+              <span className="crowned-hud-badge">60s REIGN TIMER</span>
+            </div>
+            <div className="crowned-hud-details">
+              <span className="crowned-king-wallet" title={crownedKing?.wallet}>
+                {crownedKing?.wallet ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}` : 'Waiting for King...'}
+              </span>
+              <span className="crowned-hud-dot">•</span>
+              <span className="crowned-buy-tag">🔥 {crownedKing?.buyAmountSol || 0.25} SOL Buy</span>
+            </div>
+          </div>
 
-      {/* 🏗️ Top Right "Launch a Building" Phantom Action Button */}
-      <div className="top-right-header-actions">
-        <button
-          type="button"
-          className="btn-launch-building-top"
-          onClick={() => {
-            setSelectedPlotForLaunch(null);
-            setIsLaunchModalOpen(true);
-          }}
-          title="Connect Phantom Wallet & Launch a Building in Pumptown"
-        >
-          <div className="btn-launch-left">
-            <span className="btn-launch-icon">🏗️</span>
-            <span className="btn-launch-title">Launch a Building</span>
+          {/* ⏱️ Circular / Progress Bar Timer */}
+          <div className="crowned-hud-timer-box">
+            <span className="crowned-timer-num">{timerSeconds.toFixed(1)}s</span>
+            <div className="crowned-timer-track">
+              <div
+                className={`crowned-timer-fill ${timerSeconds <= 15 ? 'urgent' : ''}`}
+                style={{ width: `${Math.max(0, Math.min(100, (timerSeconds / timerDuration) * 100))}%` }}
+              />
+            </div>
           </div>
-          <div className="btn-launch-right">
-            {walletAddress ? (
-              <span className="wallet-chip-active">
-                <span className="wallet-chip-dot" />
-                <span>{walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}</span>
-              </span>
-            ) : (
-              <span className="wallet-chip-connect">
-                <span className="phantom-icon-small">👻</span>
-                <span>Connect</span>
-              </span>
-            )}
+
+          {/* Bounty Fee Pool */}
+          <div className="crowned-hud-bounty">
+            <span className="crowned-bounty-label">Prize Pool:</span>
+            <span className="crowned-bounty-val">◎ {accumulatedFeesSol.toFixed(3)} SOL</span>
           </div>
-        </button>
+
+          {/* Dethrone Action CTA */}
+          <button
+            type="button"
+            className="btn-dethrone-cta"
+            onClick={() => setIsChallengeModalOpen(true)}
+            title="Buy 0.25+ SOL to Dethrone the King and Claim the Crown"
+          >
+            <span>⚡</span>
+            <span>Dethrone King (0.25+ SOL)</span>
+          </button>
+        </div>
       </div>
 
       {/* UI Widgets Overlay */}
@@ -679,17 +804,17 @@ export default function App() {
         <InfoModal onClose={() => setIsAboutOpen(false)} />
       )}
 
-      {/* 🏗️ Launch a Building Modal (Phantom Wallet Gated / Web3 Builder) */}
-      <LaunchBuildingModal
-        isOpen={isLaunchModalOpen}
-        onClose={() => setIsLaunchModalOpen(false)}
+      {/* 👑 Challenge / Dethrone King Modal */}
+      <ChallengeKingModal
+        isOpen={isChallengeModalOpen}
+        onClose={() => setIsChallengeModalOpen(false)}
         walletAddress={walletAddress}
         isConnecting={isWalletConnecting}
         onConnectWallet={connectWallet}
-        onDisconnectWallet={disconnectWallet}
-        selectedPlotId={selectedPlotForLaunch}
-        launchedBuildings={launchedBuildings}
-        onLaunchBuilding={handleSaveLaunchedBuilding}
+        onDethroneKing={dethroneKing}
+        crownedKing={crownedKing}
+        timerSeconds={timerSeconds}
+        accumulatedFeesSol={accumulatedFeesSol}
         settings={settings}
       />
 

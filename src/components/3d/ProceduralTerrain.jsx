@@ -86,7 +86,6 @@ class SimplexNoise2D {
     return 70.0 * (n0 + n1 + n2);
   }
 
-  // Fractal Brownian Motion (Multi-octave noise)
   fbm(x, y, octaves = 4, lacunarity = 2.0, gain = 0.5) {
     let total = 0;
     let frequency = 1.0;
@@ -103,14 +102,14 @@ class SimplexNoise2D {
 }
 
 export function ProceduralTerrain({
-  innerRadius = 125, // Flat city arena radius
-  outerSize = 650,    // Full horizon mountain span
-  segments = 140,     // Optimal resolution for clean low-poly facets
+  outerSize = 850,
+  segments = 160,
   seed = 4242,
+  summitHeight = 18.0,
 }) {
   const waterRef = useRef();
 
-  // Generate Harmonious Low-Poly Terraced & Rolling Mountain Ranges
+  // Generate Harmonious Low-Poly Terrain with Grand Center Crown Mountain
   const { geometry } = useMemo(() => {
     const simplex = new SimplexNoise2D(seed);
     const plane = new THREE.PlaneGeometry(outerSize, outerSize, segments, segments);
@@ -125,41 +124,48 @@ export function ProceduralTerrain({
 
       let y = 0;
 
-      if (dist <= innerRadius) {
-        // Flat ground for the metropolis city
-        y = 0;
-      } else {
-        // 1. Broad Continental Mountain Ridges (Low-frequency rolling waves)
+      // 🏔️ 1. Majestic Center Crown Mountain Peak (0 to 42m radius)
+      if (dist <= 42.0) {
+        if (dist <= 5.5) {
+          // Flat summit plateau for the King pedestal at Y = summitHeight
+          y = summitHeight;
+        } else {
+          // Ascending conical mountain profile with rock facets
+          const t = (dist - 5.5) / 36.5; // 0 at summit rim, 1 at mountain base
+          const baseProfile = Math.cos(t * Math.PI * 0.5);
+          const rawElevation = THREE.MathUtils.lerp(0.0, summitHeight, Math.pow(baseProfile, 1.45));
+          
+          // Rocky facets and stepped terraces
+          const rockNoise = simplex.noise(x * 0.08, z * 0.08) * 1.4;
+          const terraceStep = 3.0;
+          const steppedY = Math.floor(rawElevation / terraceStep) * terraceStep;
+          const blendY = THREE.MathUtils.lerp(rawElevation + rockNoise, steppedY, 0.25);
+          y = Math.max(0.0, blendY);
+        }
+      } 
+      // 🌿 2. Lush Valley Meadows (42m to 90m radius)
+      else if (dist < 90.0) {
+        const nGentle = simplex.fbm(x * 0.015, z * 0.015, 2, 2.0, 0.5);
+        y = Math.max(0.0, nGentle * 1.5);
+      } 
+      // ⛰️ 3. Surrounding Rolling Mountain Ridges & Horizon Peaks (90m+)
+      else {
         const nMajor = simplex.fbm(x * 0.0055, z * 0.0055, 3, 2.0, 0.5);
-        
-        // 2. Rolling Alpine Foothills & Peaks (Medium-frequency rounded noise)
         const nRolling = simplex.fbm(x * 0.012, z * 0.012, 3, 2.1, 0.45);
 
-        // 3. Smooth Non-Pointy Ridge Transformation (Plateau / Rolling Wave)
-        // Instead of sharp exponential powers (which cause needle spikes),
-        // we use soft sinusoidal wave curves and smoothed plateaus
         const wave1 = Math.sin((nMajor + 0.4) * Math.PI * 0.85);
         const wave2 = Math.cos((nRolling + 0.2) * Math.PI * 0.9);
         
-        // Soft mountain elevation: scenic rolling hills and low-profile ridges
         let mountainHeight = Math.max(0, wave1 * 0.65 + wave2 * 0.35);
-        mountainHeight = Math.pow(mountainHeight, 1.25) * 18.5;
+        mountainHeight = Math.pow(mountainHeight, 1.25) * 22.0;
 
-        // Subtle terracing / stratification for clean low-poly aesthetic
-        const terraceStep = 2.5;
+        const terraceStep = 2.8;
         const terracedH = Math.floor(mountainHeight / terraceStep) * terraceStep;
-        const terraceFract = (mountainHeight % terraceStep) / terraceStep;
-        const smoothTerrace = terracedH + Math.pow(terraceFract, 2.0) * terraceStep;
-        mountainHeight = THREE.MathUtils.lerp(mountainHeight, smoothTerrace, 0.30);
+        mountainHeight = THREE.MathUtils.lerp(mountainHeight, terracedH, 0.25);
 
-        // Coastal Valleys and Inlets
-        const valleyDip = (nMajor - 0.25) * 4.5;
-        const rawY = nMajor > -0.1 ? mountainHeight : valleyDip;
-
-        // Smooth transition from flat town border into gentle foothills and rolling ridges
-        const blendDist = Math.max(0.0, Math.min(1.0, (dist - innerRadius) / 32.0));
+        const blendDist = Math.max(0.0, Math.min(1.0, (dist - 90.0) / 35.0));
         const smoothstepBlend = blendDist * blendDist * (3.0 - 2.0 * blendDist);
-        y = rawY * smoothstepBlend;
+        y = mountainHeight * smoothstepBlend;
       }
 
       pos.setY(i, y);
@@ -173,90 +179,73 @@ export function ProceduralTerrain({
     const normals = nonIndexed.attributes.normal;
     const vertexColors = [];
 
-    // 🎨 Curated Lush Sunny Biome Palette (No Snow)
-    const cSand = new THREE.Color('#e9d8a6');          // Warm Golden Beach / Coast
-    const cGrass = new THREE.Color('#48bb35');         // Lush Lowland Meadow
-    const cHighlandGreen = new THREE.Color('#38b000'); // Sunny Highland Green
-    const cPineGreen = new THREE.Color('#2d6a4f');     // Deep Alpine Pine Forest
-    const cSlateRock = new THREE.Color('#5c677d');     // Steep Cliff Slate Rock
-    const cLightRock = new THREE.Color('#8d99ae');     // Sunny Rocky Outcrops & Ledges
+    // 🎨 Biome Color Palette
+    const cSummitGold = new THREE.Color('#e0aaff');      // Summit Plateau Accent
+    const cGrass = new THREE.Color('#48bb35');           // Lush Valley Meadow
+    const cHighlandGreen = new THREE.Color('#38b000');   // Sunny Highland Green
+    const cPineGreen = new THREE.Color('#2d6a4f');       // Deep Alpine Pine Forest
+    const cSlateRock = new THREE.Color('#5c677d');       // Steep Cliff Slate Rock
+    const cLightRock = new THREE.Color('#8d99ae');       // Sunny Rocky Outcrops & Summit
 
     for (let i = 0; i < nonIndexedPos.count; i++) {
       const y = nonIndexedPos.getY(i);
       const x = nonIndexedPos.getX(i);
       const z = nonIndexedPos.getZ(i);
       const dist = Math.sqrt(x * x + z * z);
-      const ny = normals ? normals.getY(i) : 1.0; // Slope vertical normal: 1 = flat, < 0.7 = steep cliff
+      const ny = normals ? normals.getY(i) : 1.0;
 
       let color = cGrass;
 
-      if (dist <= innerRadius + 2.0) {
+      if (dist <= 6.0) {
+        // Flat summit peak
+        color = cLightRock;
+      } else if (dist <= 42.0) {
+        // Center Crown Mountain slope
+        if (ny < 0.72) {
+          color = y > 10.0 ? cLightRock : cSlateRock;
+        } else if (y > 12.0) {
+          color = cPineGreen;
+        } else {
+          color = cGrass;
+        }
+      } else if (dist < 90.0) {
+        // Valley floor
         color = cGrass;
-      } else if (y < 0.2) {
-        color = cSand; // Golden Shore / Beach
-      } else if (ny < 0.65 && y > 2.0) {
-        // Steep cliff face -> Slate Mountain Rock
-        color = y > 10.0 ? cLightRock : cSlateRock;
-      } else if (y < 5.0) {
-        color = cGrass; // Lowland rolling meadow
-      } else if (y < 11.0) {
-        color = cPineGreen; // Highland alpine pine forest
       } else {
-        color = cHighlandGreen; // Sunny lush green summit ridges
+        // Outer mountain perimeter
+        if (ny < 0.65 && y > 2.0) {
+          color = y > 12.0 ? cLightRock : cSlateRock;
+        } else if (y < 6.0) {
+          color = cGrass;
+        } else if (y < 14.0) {
+          color = cPineGreen;
+        } else {
+          color = cHighlandGreen;
+        }
       }
 
       vertexColors.push(color.r, color.g, color.b);
     }
 
-
-
     nonIndexed.setAttribute('color', new THREE.Float32BufferAttribute(vertexColors, 3));
     return { geometry: nonIndexed };
-  }, [innerRadius, outerSize, segments, seed]);
-
-  // Subtle animated ocean ripples in valleys
-  useFrame((state) => {
-    if (!waterRef.current) return;
-    const t = state.clock.getElapsedTime();
-    waterRef.current.position.y = -0.12 + Math.sin(t * 1.2) * 0.04;
-  });
+  }, [outerSize, segments, seed, summitHeight]);
 
   return (
     <group>
-      {/* ⛰️ Beautiful Low-Poly Terraced & Rolling Mountain Ranges */}
-      <mesh name="terrain-mesh" geometry={geometry} receiveShadow castShadow>
+      {/* ⛰️ Low-Poly Terrain Mesh with Center Crown Mountain */}
+      <mesh
+        geometry={geometry}
+        receiveShadow
+        castShadow
+        position={[0, 0, 0]}
+      >
         <meshStandardMaterial
           vertexColors
           roughness={0.78}
-          metalness={0.06}
+          metalness={0.08}
           flatShading
         />
-      </mesh>
-
-      {/* 🌊 Crystal Turquoise Lagoon Water in Coastal Inlets */}
-      <mesh
-        ref={waterRef}
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.12, 0]}
-        receiveShadow
-      >
-        <planeGeometry args={[outerSize * 1.15, outerSize * 1.15, 16, 16]} />
-        <meshStandardMaterial
-          color="#00b4d8"
-          roughness={0.12}
-          metalness={0.65}
-          transparent
-          opacity={0.80}
-        />
-      </mesh>
-
-      {/* Deep Sea Floor Sub-Layer */}
-      <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -6.0, 0]}
-      >
-        <planeGeometry args={[outerSize * 1.25, outerSize * 1.25]} />
-        <meshStandardMaterial color="#0077b6" roughness={0.9} />
       </mesh>
     </group>
   );

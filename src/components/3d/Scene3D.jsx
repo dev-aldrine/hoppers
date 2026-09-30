@@ -254,10 +254,14 @@ export function Scene3D({
   isStationary = false,
   tagOffsetY = 0.0,
   tagScale = 0.85,
-  launchedBuildings = {},
-  onSelectPlot,
+  crownedKing = null,
+  timerSeconds = 60,
+  timerDuration = 60,
+  accumulatedFeesSol = 0.5,
+  fallenKings = [],
+  onRemoveFallenKing,
 }) {
-  const followedHeadPos = useRef(new THREE.Vector3(0, 1.1, 0));
+  const followedHeadPos = useRef(new THREE.Vector3(0, 19.5, 0));
   const hasFollowTarget = useRef(false);
 
   return (
@@ -270,10 +274,10 @@ export function Scene3D({
           }
         }}
         camera={{
-          position: [32, 28, 36],
-          fov: 42,
+          position: [38, 32, 45],
+          fov: 44,
           near: 0.1,
-          far: 1200,
+          far: 1400,
         }}
         gl={{
           antialias: true,
@@ -282,9 +286,9 @@ export function Scene3D({
           toneMappingExposure: 1.15,
         }}
       >
-        {/* Bright Sunny Skyblue Atmosphere with Long-Distance Horizon Fog */}
+        {/* Bright Sunny Skyblue Atmosphere with Horizon Mountain Fog */}
         <color attach="background" args={['#7ec8f8']} />
-        <fog attach="fog" args={['#8fd5ff', 240, 650]} />
+        <fog attach="fog" args={['#8fd5ff', 240, 750]} />
 
         {/* Natural Daylight & Grass Ground Bounce */}
         <hemisphereLight
@@ -296,30 +300,30 @@ export function Scene3D({
 
         {/* Primary Sun Directional Light */}
         <directionalLight
-          position={[-10.0, 55.0, 65.0]}
-          intensity={2.2}
+          position={[-15.0, 65.0, 70.0]}
+          intensity={2.3}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
-          shadow-camera-far={400}
-          shadow-camera-left={-140}
-          shadow-camera-right={140}
-          shadow-camera-top={140}
-          shadow-camera-bottom={-140}
+          shadow-camera-far={450}
+          shadow-camera-left={-160}
+          shadow-camera-right={160}
+          shadow-camera-top={160}
+          shadow-camera-bottom={-160}
           shadow-bias={-0.0003}
           shadow-normalBias={0.02}
         />
 
         {/* Warm Sunlight Fill */}
         <directionalLight
-          position={[7.0, 25.0, -45.5]}
+          position={[10.0, 30.0, -50.0]}
           intensity={0.4}
           color="#fff8e7"
         />
 
         {/* 🎯 Free Orbit & Dynamic Head-Follower Camera */}
         <ElasticPanCameraController
-          center={[0, 1.2, 0]}
+          center={[0, 15.0, 0]}
           selectedNpcId={selectedNpcId}
           followedHeadPos={followedHeadPos}
           hasFollowTarget={hasFollowTarget}
@@ -328,13 +332,16 @@ export function Scene3D({
         <Suspense fallback={null}>
           <group onClick={() => onSelectNpc && onSelectNpc(null)}>
             <WorldArena
-              radius={arenaRadius}
-              launchedBuildings={launchedBuildings}
-              onSelectPlot={onSelectPlot}
+              crownedKing={crownedKing}
+              timerSeconds={timerSeconds}
+              timerDuration={timerDuration}
+              accumulatedFeesSol={accumulatedFeesSol}
+              fallenKings={fallenKings}
+              onRemoveFallenKing={onRemoveFallenKing}
             />
           </group>
 
-          {/* Render All Dynamic Walking Player NPCs */}
+          {/* Render All Dynamic Walking Contender NPCs in the Valley */}
           {npcs.map((npc) => {
             const isFollowed =
               selectedNpcId === npc.id ||
