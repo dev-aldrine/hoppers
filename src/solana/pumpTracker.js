@@ -349,92 +349,113 @@ export const fetchTopHolders = fetchHolders;
 
 /**
  * Fetches the legitimate last on-chain buyer for this token who bought >= minSol (default 0.25 SOL)
- * Multi-layer pipeline: Pump.fun Trade History -> PumpPortal API -> On-Chain Solana RPC Signatures
+ * Multi-layer pipeline: Helius Enhanced Transactions -> Solana RPC Parsed Signatures -> PumpPortal
  */
-export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 0.25) {
+export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 0.25, apiKey = null) {
   if (!mintAddress || !isValidPublicKey(mintAddress)) return null;
   const cleanMint = mintAddress.trim();
+  const effectiveApiKey = (apiKey && apiKey.trim()) || 'aac38acb-66a6-4494-870e-8bb5c14c051a';
 
-  // 1. Query Pump.fun official trade history endpoint
-  try {
-    const res = await fetch(`https://frontend-api.pump.fun/coins/trades/${cleanMint}?limit=50&offset=0`);
-    if (res.ok) {
-      const trades = await res.json();
-      if (Array.isArray(trades)) {
-        for (const t of trades) {
-          const isBuy = t.is_buy === true || t.type === 'buy' || t.tx_type === 'buy';
-          let solAmount = Number(t.sol_amount || t.solAmount || 0);
-          if (solAmount > 10000) {
-            solAmount = solAmount / 1e9; // Convert lamports to SOL
-          }
-          const userWallet = t.user || t.traderPublicKey || t.wallet;
-          if (isBuy && solAmount >= minSol && userWallet) {
-            return {
-              wallet: userWallet,
-              buyAmountSol: Number(solAmount.toFixed(2)),
-              timestamp: t.timestamp ? (t.timestamp < 1e11 ? t.timestamp * 1000 : t.timestamp) : Date.now(),
-              signature: t.signature,
-            };
-          }
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('[pumpTracker] Pump trade history query warning:', e);
-  }
-
-  // 2. Query PumpPortal trades cache
-  try {
-    const res = await fetch(`https://pumpportal.fun/api/trades?mint=${cleanMint}`);
-    if (res.ok) {
-      const trades = await res.json();
-      if (Array.isArray(trades)) {
-        for (const t of trades) {
-          const isBuy = t.txType === 'buy' || t.isBuy === true;
-          const solAmount = Number(t.solAmount || 0);
-          const userWallet = t.traderPublicKey || t.wallet;
-          if (isBuy && solAmount >= minSol && userWallet) {
-            return {
-              wallet: userWallet,
-              buyAmountSol: Number(solAmount.toFixed(2)),
-              timestamp: t.timestamp || Date.now(),
-              signature: t.signature || t.txHash,
-            };
-          }
-        }
-      }
-    }
-  } catch (e) {}
-
-  // 3. Query on-chain parsed transactions from Solana RPC
-  if (connection) {
+  // 1. High-Performance Helius Enhanced Transaction Parser (< 300ms)
+  if (effectiveApiKey) {
     try {
-      const pda = getBondingCurvePDA(cleanMint);
-      if (pda) {
-        const sigs = await connection.getSignaturesForAddress(pda, { limit: 15 });
-        if (sigs && sigs.length > 0) {
-          const txs = await connection.getParsedTransactions(sigs.slice(0, 8).map((s) => s.signature), {
-            maxSupportedTransactionVersion: 0,
-          });
+      const url = `https://api.helius.xyz/v0/addresses/${cleanMint}/transactions?api-key=${effectiveApiKey}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const txs = await res.json();
+        if (Array.isArray(txs)) {
           for (const tx of txs) {
-            if (!tx || !tx.meta || tx.meta.err) continue;
-            const accountKeys = tx.transaction.message.accountKeys;
-            const feePayer = accountKeys[0]?.pubkey?.toBase58();
-            const preBal = tx.meta.preBalances[0];
-            const postBal = tx.meta.postBalances[0];
-            const solSpent = (preBal - postBal) / 1e9;
-            if (solSpent >= minSol && feePayer && !KNOWN_POOL_ADDRESSES.has(feePayer)) {
-              return {
-                wallet: feePayer,
-                buyAmountSol: Number(solSpent.toFixed(2)),
-                timestamp: tx.blockTime ? tx.blockTime * 1000 : Date.now(),
-                signature: tx.transaction.signatures[0],
-              };
+            const tokenTransfers = tx.tokenTransfers || [];
+            const feePayer = tx.feePayer;
+
+            // Find if tokens of this mint were received by a legitimate user wallet
+            const tokenTransfer = tokenTransfers.find(
+              (tt) =>
+                tt.mint === cleanMint &&
+                tt.tokenAmount > 0 &&
+                tt.toUserAccount &&
+                !KNOWN_POOL_ADDRESSES.has(tt.toUserAccount)
+            );
+
+            if (tokenTransfer) {
+              const buyerWallet = tokenTransfer.toUserAccount || feePayer;
+
+              // Calculate net SOL spent by the buyer
+              let solSpent = 0;
+              if (tx.accountData) {
+                const buyerAcc = tx.accountData.find(
+                  (a) => a.account === buyerWallet || a.account === feePayer
+                );
+                if (buyerAcc && buyerAcc.nativeBalanceChange < 0) {
+                  solSpent = Math.abs(buyerAcc.nativeBalanceChange) / 1e9;
+                }
+              }
+
+              if (solSpent === 0 && tx.nativeTransfers) {
+                const spentTransfers = tx.nativeTransfers.filter(
+                  (nt) => nt.fromUserAccount === buyerWallet || nt.fromUserAccount === feePayer
+                );
+                const receivedTransfers = tx.nativeTransfers.filter(
+                  (nt) => nt.toUserAccount === buyerWallet || nt.toUserAccount === feePayer
+                );
+                const totalOut = spentTransfers.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+                const totalIn = receivedTransfers.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+                if (totalOut > totalIn) {
+                  solSpent = (totalOut - totalIn) / 1e9;
+                }
+              }
+
+              if (solSpent >= minSol && buyerWallet && !KNOWN_POOL_ADDRESSES.has(buyerWallet)) {
+                return {
+                  wallet: buyerWallet,
+                  buyAmountSol: Number(solSpent.toFixed(3)),
+                  timestamp: tx.timestamp ? tx.timestamp * 1000 : Date.now(),
+                  signature: tx.signature,
+                };
+              }
             }
           }
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[pumpTracker] Helius enhanced tx parser warning:', e);
+    }
+  }
+
+  // 2. Query on-chain parsed transactions from Solana RPC
+  if (connection) {
+    try {
+      const pda = getBondingCurvePDA(cleanMint);
+      const targetPubkey = pda || new PublicKey(cleanMint);
+      const sigs = await connection.getSignaturesForAddress(targetPubkey, { limit: 20 });
+      
+      if (sigs && sigs.length > 0) {
+        const txs = await connection.getParsedTransactions(
+          sigs.slice(0, 10).map((s) => s.signature),
+          { maxSupportedTransactionVersion: 0 }
+        );
+
+        for (const tx of txs) {
+          if (!tx || !tx.meta || tx.meta.err) continue;
+          const accountKeys = tx.transaction.message.accountKeys;
+          const feePayer = accountKeys[0]?.pubkey?.toBase58();
+          const preBal = tx.meta.preBalances[0];
+          const postBal = tx.meta.postBalances[0];
+          const solSpent = (preBal - postBal) / 1e9;
+
+          if (solSpent >= minSol && feePayer && !KNOWN_POOL_ADDRESSES.has(feePayer)) {
+            return {
+              wallet: feePayer,
+              buyAmountSol: Number(solSpent.toFixed(3)),
+              timestamp: tx.blockTime ? tx.blockTime * 1000 : Date.now(),
+              signature: tx.transaction.signatures[0],
+            };
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[pumpTracker] Solana RPC parsed signatures fallback warning:', e);
+    }
   }
 
   return null;

@@ -153,38 +153,42 @@ export default function App() {
   };
 
   // 💥 Dethrone the current King and crown the new buyer (minimum 0.25 SOL)
-  const dethroneKing = (buyerWallet, solAmount) => {
+  const dethroneKing = (buyerWallet, solAmount, signature = null, timestamp = null) => {
     const amount = Number(solAmount) || 0.25;
-    if (amount < 0.25) return;
+    if (amount < 0.25 || !buyerWallet) return;
 
-    // 1. Add current king to falling queue for knockoff physics
-    if (crownedKing) {
-      setFallenKings((prev) => [
-        ...prev,
-        {
-          id: `fallen-${Date.now()}-${Math.random()}`,
-          wallet: crownedKing.wallet,
-          timestamp: Date.now(),
-        },
-      ]);
-    }
+    // 1. Add current king to falling queue for knockoff physics if new king is different
+    setCrownedKing((prevKing) => {
+      if (prevKing && prevKing.wallet && prevKing.wallet !== buyerWallet) {
+        setFallenKings((prev) => [
+          ...prev,
+          {
+            id: `fallen-${Date.now()}-${Math.random()}`,
+            wallet: prevKing.wallet,
+            timestamp: Date.now(),
+          },
+        ]);
+      }
 
-    // 2. Crown new King
-    const newKing = {
-      id: `king-${Date.now()}`,
-      wallet: buyerWallet,
-      buyAmountSol: amount,
-      crownedAt: Date.now(),
-    };
-    setCrownedKing(newKing);
-    try {
-      localStorage.setItem('crowned_king_data', JSON.stringify(newKing));
-    } catch (e) {}
+      const newKing = {
+        id: `king-${buyerWallet}-${signature || Date.now()}`,
+        wallet: buyerWallet,
+        buyAmountSol: Number(amount.toFixed(3)),
+        crownedAt: timestamp || Date.now(),
+        signature: signature || null,
+      };
 
-    // 3. Reset 60s Timer
+      try {
+        localStorage.setItem('crowned_king_data', JSON.stringify(newKing));
+      } catch (e) {}
+
+      return newKing;
+    });
+
+    // 2. Reset 60s Timer
     setTimerSeconds(60.0);
 
-    // 4. Add fee accumulation to prize pot
+    // 3. Add fee accumulation to prize pot
     const feeAdded = Math.max(0.015, amount * 0.05);
     setAccumulatedFeesSol((prev) => {
       const updated = Number((prev + feeAdded).toFixed(3));
@@ -194,7 +198,7 @@ export default function App() {
       return updated;
     });
 
-    // 5. Sound & Dethrone Effects
+    // 4. Sound & Dethrone Effects
     soundManager?.playBuyChime?.();
     confetti({
       particleCount: 90,
@@ -354,9 +358,9 @@ export default function App() {
 
     setTrades((prev) => [newTrade, ...prev.slice(0, 19)]);
 
-    if (txType === 'buy' && solAmount >= 0.25) {
+    if ((txType === 'buy' || txType === 'BUY') && solAmount >= 0.25) {
       // 👑 Automatic King Dethroning on >= 0.25 SOL Buy!
-      dethroneKing(traderWallet || shortWallet, solAmount);
+      dethroneKing(traderWallet || shortWallet, solAmount, tradeEvent.signature, tradeEvent.timestamp);
     }
 
     if (txType === 'buy' && solAmount >= (settings.minSpawnSol || 0.01)) {
@@ -508,16 +512,44 @@ export default function App() {
 
     // 4. Legitimately fetch the last qualified >= 0.25 SOL on-chain buyer for this token
     const updateQualifiedKing = () => {
-      fetchLastQualifiedBuyer(connection, settings.mintAddress, 0.25).then((qualifiedBuyer) => {
+      fetchLastQualifiedBuyer(connection, settings.mintAddress, 0.25, settings.heliusApiKey).then((qualifiedBuyer) => {
         if (qualifiedBuyer && qualifiedBuyer.wallet) {
           setCrownedKing((current) => {
-            if (!current || (qualifiedBuyer.timestamp && qualifiedBuyer.timestamp > (current.crownedAt || 0))) {
-              return {
-                id: `king-${qualifiedBuyer.wallet}-${qualifiedBuyer.timestamp}`,
+            const isDifferent =
+              !current ||
+              current.wallet !== qualifiedBuyer.wallet ||
+              (qualifiedBuyer.signature && current.signature !== qualifiedBuyer.signature);
+
+            if (isDifferent) {
+              // Trigger dethroning animation & push old king to fallen kings queue
+              if (current && current.wallet && current.wallet !== qualifiedBuyer.wallet) {
+                setFallenKings((prev) => [
+                  ...prev,
+                  {
+                    id: `fallen-${Date.now()}-${Math.random()}`,
+                    wallet: current.wallet,
+                    timestamp: Date.now(),
+                  },
+                ]);
+              }
+
+              // Reset timer to 60s
+              setTimerSeconds(60.0);
+              soundManager?.playBuyChime?.();
+
+              const newKingData = {
+                id: `king-${qualifiedBuyer.wallet}-${qualifiedBuyer.signature || Date.now()}`,
                 wallet: qualifiedBuyer.wallet,
                 buyAmountSol: qualifiedBuyer.buyAmountSol || 0.25,
                 crownedAt: qualifiedBuyer.timestamp || Date.now(),
+                signature: qualifiedBuyer.signature || null,
               };
+
+              try {
+                localStorage.setItem('crowned_king_data', JSON.stringify(newKingData));
+              } catch (e) {}
+
+              return newKingData;
             }
             return current;
           });
@@ -528,7 +560,7 @@ export default function App() {
     updateHolders();
     updateQualifiedKing();
     const holderInterval = setInterval(updateHolders, 25000);
-    const kingSyncInterval = setInterval(updateQualifiedKing, 20000);
+    const kingSyncInterval = setInterval(updateQualifiedKing, 4000);
 
     return () => {
       if (unsubscribeCurve) unsubscribeCurve();
