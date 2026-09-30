@@ -461,3 +461,74 @@ export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 
   return null;
 }
 
+/**
+ * Fetches recent on-chain transactions for the token to seed the Transaction Leaderboard
+ */
+export async function fetchRecentTrades(connection, mintAddress, apiKey = null, solPrice = 119.5) {
+  if (!mintAddress || !isValidPublicKey(mintAddress)) return [];
+  const cleanMint = mintAddress.trim();
+  const effectiveApiKey = (apiKey && apiKey.trim()) || 'aac38acb-66a6-4494-870e-8bb5c14c051a';
+
+  if (effectiveApiKey) {
+    try {
+      const url = `https://api.helius.xyz/v0/addresses/${cleanMint}/transactions?api-key=${effectiveApiKey}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const txs = await res.json();
+        if (Array.isArray(txs)) {
+          const trades = [];
+          for (const tx of txs) {
+            const tokenTransfers = tx.tokenTransfers || [];
+            const feePayer = tx.feePayer;
+
+            const tokenTransfer = tokenTransfers.find((tt) => tt.mint === cleanMint);
+            if (!tokenTransfer) continue;
+
+            const isBuy =
+              tokenTransfer.toUserAccount === feePayer ||
+              (tokenTransfer.toUserAccount && !tokenTransfer.toUserAccount.startsWith('6EF8'));
+            const buyerWallet = tokenTransfer.toUserAccount || feePayer;
+            const sellerWallet = tokenTransfer.fromUserAccount || feePayer;
+            const targetWallet = isBuy ? buyerWallet : sellerWallet;
+
+            let solAmount = 0;
+            if (tx.accountData) {
+              const userAcc = tx.accountData.find(
+                (a) => a.account === targetWallet || a.account === feePayer
+              );
+              if (userAcc && userAcc.nativeBalanceChange) {
+                solAmount = Math.abs(userAcc.nativeBalanceChange) / 1e9;
+              }
+            }
+
+            if (solAmount === 0 && tx.nativeTransfers) {
+              const spent = tx.nativeTransfers.filter(
+                (n) => n.fromUserAccount === targetWallet || n.fromUserAccount === feePayer
+              );
+              solAmount = spent.reduce((s, t) => s + (Number(t.amount) || 0), 0) / 1e9;
+            }
+
+            if (solAmount > 0 && targetWallet && !KNOWN_POOL_ADDRESSES.has(targetWallet)) {
+              trades.push({
+                id: `tx-${tx.signature || Math.random().toString(36).substring(2, 6)}`,
+                wallet: `${targetWallet.slice(0, 4)}...${targetWallet.slice(-4)}`,
+                fullWallet: targetWallet,
+                solAmount: Number(solAmount.toFixed(3)),
+                usdValue: (solAmount * solPrice).toLocaleString(undefined, { maximumFractionDigits: 0 }),
+                txType: isBuy ? 'buy' : 'sell',
+                timestamp: tx.timestamp ? tx.timestamp * 1000 : Date.now(),
+                signature: tx.signature,
+              });
+            }
+          }
+          return trades;
+        }
+      }
+    } catch (e) {
+      console.warn('[pumpTracker] fetchRecentTrades warning:', e);
+    }
+  }
+
+  return [];
+}
+

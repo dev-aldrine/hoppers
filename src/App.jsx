@@ -17,6 +17,7 @@ import {
   fetchLiveSolPrice,
   fetchLiveMarketCapSnapshot,
   fetchLastQualifiedBuyer,
+  fetchRecentTrades,
 } from './solana/pumpTracker';
 import { isValidPublicKey } from './solana/bondingCurve';
 import { getProjectSettings, fetchSharedSettings, saveProjectSettings, usePhantomAuth } from './solana/phantomAuth';
@@ -437,6 +438,13 @@ export default function App() {
       }
     });
 
+    // Seed recent on-chain transactions for Transaction Leaderboard
+    fetchRecentTrades(connection, rawMint, settings.heliusApiKey, solUsdPriceRef.current).then((recentTxs) => {
+      if (recentTxs && recentTxs.length > 0) {
+        setTrades(recentTxs);
+      }
+    });
+
     const hasDedicatedWs = Boolean(settings.heliusApiKey && settings.heliusApiKey.trim());
 
     // 1. Subscribe to bonding curve account changes (< 200ms latency)
@@ -829,7 +837,9 @@ export default function App() {
         {/* Left HUD: Dedicated Leaderboard */}
         <div className="ui-left">
           <TradeFeed
+            trades={trades}
             npcs={enrichedNpcs}
+            crownedKing={crownedKing}
             selectedNpcId={selectedNpc?.id || null}
             onSelectNpc={(npc) => setSelectedNpc(npc)}
           />
