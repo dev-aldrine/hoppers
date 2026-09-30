@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="crownGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff3b0" />
+      <stop offset="40%" stop-color="#ffd166" />
+      <stop offset="80%" stop-color="#ff9f1c" />
+      <stop offset="100%" stop-color="#d48b00" />
+    </linearGradient>
+    <linearGradient id="gemRed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff758f" />
+      <stop offset="100%" stop-color="#d90429" />
+    </linearGradient>
+    <linearGradient id="gemCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#70e000" />
+      <stop offset="100%" stop-color="#007200" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#ffb703" flood-opacity="0.6" />
+    </filter>
+  </defs>
+
+  <!-- Crown Base & Spikes with Glow -->
+  <g filter="url(#glow)">
+    <path d="M 6 48 L 58 48 L 54 22 L 42 34 L 32 10 L 22 34 L 10 22 Z" fill="url(#crownGold)" stroke="#b07200" stroke-width="1.5" stroke-linejoin="round" />
+    
+    <!-- Crown Rim Band -->
+    <rect x="6" y="46" width="52" height="9" rx="3" fill="url(#crownGold)" stroke="#b07200" stroke-width="1.2" />
+    
+    <!-- Gold Spheres at Peak Tips -->
+    <circle cx="32" cy="10" r="3.5" fill="#fff3b0" stroke="#b07200" stroke-width="1" />
+    <circle cx="10" cy="22" r="2.8" fill="#fff3b0" stroke="#b07200" stroke-width="1" />
+    <circle cx="54" cy="22" r="2.8" fill="#fff3b0" stroke="#b07200" stroke-width="1" />
+    
+    <!-- Ruby & Emerald Gem Accents on Rim -->
+    <polygon points="32,48 35,51 32,54 29,51" fill="url(#gemRed)" />
+    <circle cx="18" cy="51" r="2.2" fill="url(#gemCyan)" />
+    <circle cx="46" cy="51" r="2.2" fill="url(#gemCyan)" />
+  </g>
+</svg>
