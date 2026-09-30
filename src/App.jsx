@@ -419,6 +419,24 @@ export default function App() {
     }
   }, [settings.minSpawnSol, crownedKing]);
 
+  // 🔄 Live Volume & 0.30% Creator Fees Refresher
+  const refreshVolumeAndFees = useCallback(() => {
+    const rawMint = settings.mintAddress ? settings.mintAddress.trim() : '';
+    if (!rawMint || !isValidPublicKey(rawMint)) return;
+
+    fetchLiveMarketCapSnapshot(rawMint, solUsdPriceRef.current).then((snap) => {
+      if (snap) {
+        setMarketCapData((prev) => ({ ...prev, ...snap }));
+        if (snap.creatorFeesSol && snap.creatorFeesSol > 0) {
+          setAccumulatedFeesSol(snap.creatorFeesSol);
+          try {
+            localStorage.setItem('crowned_accumulated_fees', String(snap.creatorFeesSol));
+          } catch (e) {}
+        }
+      }
+    });
+  }, [settings.mintAddress]);
+
   // Subscribe to live Pump bonding curve updates, trades & holders (Restarts on CA change)
   useEffect(() => {
     const rawMint = settings.mintAddress ? settings.mintAddress.trim() : '';
@@ -440,21 +458,6 @@ export default function App() {
     setTrades([]);
     setHolders([]);
     setNpcs([]);
-
-    // 0. Live Volume & Creator Fees Refresher
-    const refreshVolumeAndFees = () => {
-      fetchLiveMarketCapSnapshot(rawMint, solUsdPriceRef.current).then((snap) => {
-        if (snap) {
-          setMarketCapData((prev) => ({ ...prev, ...snap }));
-          if (snap.creatorFeesSol && snap.creatorFeesSol > 0) {
-            setAccumulatedFeesSol(snap.creatorFeesSol);
-            try {
-              localStorage.setItem('crowned_accumulated_fees', String(snap.creatorFeesSol));
-            } catch (e) {}
-          }
-        }
-      });
-    };
 
     // Instant snapshot on CA load
     refreshVolumeAndFees();
@@ -599,7 +602,7 @@ export default function App() {
       clearInterval(kingSyncInterval);
       clearInterval(feeSyncInterval);
     };
-  }, [connection, settings.mintAddress, settings.heliusApiKey, handleLiveTrade]);
+  }, [connection, settings.mintAddress, settings.heliusApiKey, handleLiveTrade, refreshVolumeAndFees]);
 
   // Expose showFull() command for browser console debugging
   useEffect(() => {
