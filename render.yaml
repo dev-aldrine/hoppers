@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: hoppers-game
+    name: crowned-arena
     env: node
     plan: free
-    buildCommand: npm install --include=dev && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
