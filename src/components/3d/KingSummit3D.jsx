@@ -157,47 +157,49 @@ export function KingSummit3D({
         scale={[0.95, 0.95, 0.95]}
       />
 
-      {/* 🏷️ Big Majestic Overhead Crown & Timer Badge (+30% Y elevation) */}
-      <SafeHtml position={[0, 12.5, 0]} center distanceFactor={52} occlude={false}>
-        <div className="king-summit-overhead-badge">
-          {/* Crown Title Header */}
-          <div className="king-badge-header">
-            <span className="king-badge-crown-icon">👑</span>
-            <div className="king-badge-titles">
-              <span className="king-badge-realm-title">CURRENT CROWN HOLDER</span>
-              <span className="king-badge-wallet">
-                {formattedWallet} {hasRealKing && crownedKing?.buyAmountSol ? `(🔥 ${crownedKing.buyAmountSol} SOL)` : ''}
-              </span>
+      {/* 🏷️ Big Majestic Overhead Crown & Timer Badge (+30% Y elevation) - ONLY shown when real CA / King active */}
+      {hasRealKing && (
+        <SafeHtml position={[0, 12.5, 0]} center distanceFactor={52} occlude={false}>
+          <div className="king-summit-overhead-badge">
+            {/* Crown Title Header */}
+            <div className="king-badge-header">
+              <span className="king-badge-crown-icon">👑</span>
+              <div className="king-badge-titles">
+                <span className="king-badge-realm-title">CURRENT CROWN HOLDER</span>
+                <span className="king-badge-wallet">
+                  {formattedWallet} {crownedKing?.buyAmountSol ? `(🔥 ${crownedKing.buyAmountSol} SOL)` : ''}
+                </span>
+              </div>
             </div>
-          </div>
 
-          {/* 60-Second Countdown Timer Bar */}
-          <div className="king-timer-container">
-            <div className="king-timer-info-row">
-              <span className="king-timer-label">HOLD CROWN FOR 60s TO CLAIM FEES:</span>
-              <span className={`king-timer-clock ${isTimeLow ? 'urgent' : ''}`}>
-                ⏱️ {timerSeconds.toFixed(1)}s
-              </span>
+            {/* 60-Second Countdown Timer Bar */}
+            <div className="king-timer-container">
+              <div className="king-timer-info-row">
+                <span className="king-timer-label">HOLD CROWN FOR 60s TO CLAIM FEES:</span>
+                <span className={`king-timer-clock ${isTimeLow ? 'urgent' : ''}`}>
+                  ⏱️ {timerSeconds.toFixed(1)}s
+                </span>
+              </div>
+              <div className="king-timer-bar-track">
+                <div
+                  className={`king-timer-bar-fill ${isTimeLow ? 'urgent' : ''}`}
+                  style={{ width: `${timerPct}%` }}
+                />
+              </div>
             </div>
-            <div className="king-timer-bar-track">
-              <div
-                className={`king-timer-bar-fill ${isTimeLow ? 'urgent' : ''}`}
-                style={{ width: `${timerPct}%` }}
-              />
-            </div>
-          </div>
 
-          {/* Reward Bounty Banner */}
-          <div className="king-bounty-chip">
-            <span>💰 0.30% Creator Rewards:</span>
-            <strong>
-              {accumulatedFeesSol >= 0.2
-                ? `◎ ${accumulatedFeesSol.toFixed(3)} SOL`
-                : 'Accumulating...'}
-            </strong>
+            {/* Reward Bounty Banner */}
+            <div className="king-bounty-chip">
+              <span>💰 0.30% Creator Rewards:</span>
+              <strong>
+                {accumulatedFeesSol >= 0.2
+                  ? `◎ ${accumulatedFeesSol.toFixed(3)} SOL`
+                  : 'Accumulating...'}
+              </strong>
+            </div>
           </div>
-        </div>
-      </SafeHtml>
+        </SafeHtml>
+      )}
     </group>
   );
 }

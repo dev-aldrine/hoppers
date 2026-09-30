@@ -1,45 +1,66 @@
 import React from 'react';
-import { X, Sparkles } from 'lucide-react';
-import growersLogo from '../../assets/growers_wordmark.png';
+import { X, Crown, Sparkles, ShieldCheck, Flame, Timer, Coins } from 'lucide-react';
 
 export function InfoModal({ onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content glass-card info-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content glass-card info-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
         <button className="modal-close" onClick={onClose} title="Close">
           <X size={20} />
         </button>
 
-        {/* Modal Header with GROWERS Logo */}
-        <div className="modal-header info-modal-header" style={{ justifyContent: 'center', textAlign: 'center', marginBottom: '14px' }}>
-          <img
-            src={growersLogo}
-            alt="GROWERS"
-            className="info-modal-logo-img"
-            style={{
-              maxHeight: '76px',
-              maxWidth: '85%',
-              objectFit: 'contain',
-              display: 'block',
-              margin: '0 auto',
-            }}
-          />
+        {/* Modal Header */}
+        <div className="modal-header info-modal-header" style={{ justifyContent: 'center', textAlign: 'center', marginBottom: '16px', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 0 16px rgba(255, 209, 102, 0.8))' }}>👑</div>
+          <h2 style={{ fontFamily: 'var(--font-heading, sans-serif)', fontSize: '1.4rem', fontWeight: 900, color: '#ffd166', margin: 0, letterSpacing: '0.04em' }}>
+            CROWNED ($CROWNED)
+          </h2>
+          <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 600 }}>
+            Pump.fun On-Chain King of the Mountain
+          </span>
         </div>
 
-        {/* Core Narrative Box */}
-        <div className="info-narrative-card">
-          <div className="info-narrative-badge">
+        {/* Narrative & Token Intro */}
+        <div className="info-narrative-card" style={{ marginBottom: '14px', background: 'rgba(255, 209, 102, 0.06)', border: '1px solid rgba(255, 209, 102, 0.25)', borderRadius: '14px', padding: '14px' }}>
+          <div className="info-narrative-badge" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ffd166', fontWeight: 800, fontSize: '0.72rem', textTransform: 'uppercase', marginBottom: '8px' }}>
             <Sparkles size={14} />
-            <span>HOW IT WORKS</span>
+            <span>THE REIGN OF THE CROWN</span>
           </div>
-          <p className="info-narrative-text">
-            Higher market cap = bigger dick. That’s literally the entire narrative. We’re not showers, we’re <strong>$GROWERS</strong>.
+          <p className="info-narrative-text" style={{ fontSize: '0.82rem', lineHeight: '1.5', color: '#e2e8f0', margin: 0 }}>
+            <strong>CROWNED</strong> is an on-chain King of the Mountain battle arena on Solana. Every buy of <strong>0.25+ SOL</strong> dethrones the reigning king and resets the summit clock. Defend the mountain peak for 60 seconds to claim <strong>100% of all accumulated 0.30% creator trading fees</strong>!
           </p>
         </div>
 
+        {/* 3 Step Guide */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', background: 'rgba(255, 255, 255, 0.03)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '1.1rem' }}>⚡</span>
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#00f5d4' }}>Step 1: Dethrone with ≥ 0.25 SOL Buy</div>
+              <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>Buy 0.25 SOL or more on Pump.fun to knock the king off the peak and ascend the throne.</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', background: 'rgba(255, 255, 255, 0.03)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '1.1rem' }}>⏱️</span>
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ffd166' }}>Step 2: Hold Summit for 60 Seconds</div>
+              <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>The 60s countdown starts immediately upon crowning. If no one buys ≥ 0.25 SOL before timer hits 0s, you win!</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', background: 'rgba(255, 255, 255, 0.03)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <span style={{ fontSize: '1.1rem' }}>💰</span>
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ff007f' }}>Step 3: Win 100% Creator Fees (0.30%)</div>
+              <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>All 0.30% creator fees generated by continuous token trading volume are sent directly to the winning King’s wallet.</div>
+            </div>
+          </div>
+        </div>
+
         {/* Action Button */}
-        <button className="btn-done" onClick={onClose} style={{ marginTop: '16px' }}>
-          Got It • Start Growing
+        <button className="btn-done" onClick={onClose} style={{ width: '100%', padding: '12px', borderRadius: '12px', background: 'linear-gradient(135deg, #ffd166 0%, #ff9f1c 100%)', color: '#000', fontWeight: 800, border: 'none', cursor: 'pointer', boxShadow: '0 4px 18px rgba(255, 209, 102, 0.4)' }}>
+          Claim The Summit • Get Crowned
         </button>
       </div>
     </div>

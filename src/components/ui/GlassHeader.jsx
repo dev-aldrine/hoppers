@@ -44,7 +44,7 @@ export function GlassHeader({
           title={isRealCA ? 'Click to copy CA' : 'CA updating soon'}
           style={!isRealCA ? { cursor: 'default' } : {}}
         >
-          <span className="ca-label">CA:</span>
+          {isRealCA && <span className="ca-label">CA:</span>}
           <span className="ca-value">{shortCA}</span>
           {isRealCA && (
             copied ? <Check size={14} className="text-green" /> : <Copy size={14} />

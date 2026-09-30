@@ -29,7 +29,7 @@ export function BottomDock({ settings, isMuted = false, onToggleMute, onOpenAbou
           title={isRealCA ? 'Click to copy full CA' : 'CA updating soon'}
           style={!isRealCA ? { cursor: 'default' } : {}}
         >
-          <span className="dock-ca-tag">CA:</span>
+          {isRealCA && <span className="dock-ca-tag">CA:</span>}
           <span className="dock-ca-val font-mono">{displayCA}</span>
           {isRealCA && (
             <span className="dock-ca-icon">
@@ -67,7 +67,7 @@ export function BottomDock({ settings, isMuted = false, onToggleMute, onOpenAbou
             type="button"
             onClick={onOpenAbout}
             className="dock-icon-btn dock-about"
-            title="About $GROWERS"
+            title="About $CROWNED"
           >
             <HelpCircle size={16} />
           </button>

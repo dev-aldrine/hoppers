@@ -807,37 +807,45 @@ export default function App() {
           <div className="crowned-hud-main">
             <div className="crowned-hud-crown">👑</div>
             <div className="crowned-hud-info">
-              <div className="crowned-hud-title-row">
-                <span className="crowned-hud-title">CROWNED</span>
-                <span className="crowned-hud-badge">60s REIGN</span>
-              </div>
-              <div className="crowned-hud-details">
-                {(() => {
-                  const rawMint = settings.mintAddress ? settings.mintAddress.trim() : '';
-                  const isRealCA = Boolean(rawMint && rawMint.length >= 32 && !rawMint.toLowerCase().includes('updating'));
-                  const hasRealKing = Boolean(
-                    isRealCA &&
-                    crownedKing &&
-                    crownedKing.wallet &&
-                    crownedKing.wallet.length >= 32 &&
-                    !crownedKing.wallet.toLowerCase().includes('updating')
-                  );
+              {(() => {
+                const rawMint = settings.mintAddress ? settings.mintAddress.trim() : '';
+                const isRealCA = Boolean(rawMint && rawMint.length >= 32 && !rawMint.toLowerCase().includes('updating'));
+                const hasRealKing = Boolean(
+                  isRealCA &&
+                  crownedKing &&
+                  crownedKing.wallet &&
+                  crownedKing.wallet.length >= 32 &&
+                  !crownedKing.wallet.toLowerCase().includes('updating')
+                );
 
-                  return (
-                    <>
-                      <span className="crowned-king-wallet" title={hasRealKing ? crownedKing.wallet : 'Waiting for King...'}>
-                        {hasRealKing ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}` : 'Waiting for King...'}
-                      </span>
-                      {hasRealKing && (
+                return (
+                  <>
+                    <div className="crowned-hud-title-row">
+                      <span className="crowned-hud-title">CROWNED</span>
+                      {isRealCA && <span className="crowned-hud-badge">60s REIGN</span>}
+                    </div>
+                    <div className="crowned-hud-details">
+                      {!isRealCA ? (
+                        <span className="crowned-king-status" style={{ color: '#ffd166', fontStyle: 'italic', fontWeight: 600 }}>
+                          Updating CA...
+                        </span>
+                      ) : (
                         <>
-                          <span className="crowned-hud-dot">•</span>
-                          <span className="crowned-buy-tag">🔥 {crownedKing?.buyAmountSol || 0.25} SOL</span>
+                          <span className="crowned-king-wallet" title={hasRealKing ? crownedKing.wallet : 'Waiting for King...'}>
+                            {hasRealKing ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}` : 'Waiting for King...'}
+                          </span>
+                          {hasRealKing && (
+                            <>
+                              <span className="crowned-hud-dot">•</span>
+                              <span className="crowned-buy-tag">🔥 {crownedKing?.buyAmountSol || 0.25} SOL</span>
+                            </>
+                          )}
                         </>
                       )}
-                    </>
-                  );
-                })()}
-              </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
@@ -873,16 +881,19 @@ export default function App() {
             </div>
           </div>
 
-          {/* 4. Dethrone Action CTA Button */}
-          <button
-            type="button"
-            className="btn-dethrone-cta"
+          {/* 4. Token & Crown Rules Strip (Explains token and how to get crowned) */}
+          <div
+            className="crowned-hud-info-strip"
             onClick={() => setIsChallengeModalOpen(true)}
-            title="Buy 0.25+ SOL to Dethrone and Get Crowned"
+            title="Click to view full crown rules & mechanics"
           >
-            <span>⚡</span>
-            <span>Dethrone & Crown (0.25+ SOL)</span>
-          </button>
+            <div className="crowned-info-badge">
+              <span className="crowned-info-icon">👑</span>
+              <span className="crowned-info-text">
+                Buy <b>≥ 0.25 SOL</b> to steal Crown • Hold <b>60s</b> to win <b>100% of 0.30% creator fees</b>!
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

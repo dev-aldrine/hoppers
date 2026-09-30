@@ -4318,28 +4318,60 @@ body, html {
   color: #00f5d4;
 }
 
-/* Dethrone CTA Button */
-.btn-dethrone-cta {
+/* Token & Crown Mechanic Info Strip */
+.crowned-hud-info-strip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: linear-gradient(135deg, #ffd166 0%, #ff9f1c 100%);
-  color: #0b0f19;
-  font-size: 0.82rem;
-  font-weight: 900;
-  padding: 8px 16px;
-  border-radius: 100px;
-  border: none;
+  background: rgba(255, 209, 102, 0.08);
+  border: 1px solid rgba(255, 209, 102, 0.28);
+  padding: 6px 14px;
+  border-radius: 12px;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(255, 209, 102, 0.4);
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
+  transition: all 0.25s ease;
+  max-width: 380px;
 }
 
-.btn-dethrone-cta:hover {
+.crowned-hud-info-strip:hover {
+  background: rgba(255, 209, 102, 0.16);
+  border-color: rgba(255, 209, 102, 0.55);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(255, 209, 102, 0.6);
+  box-shadow: 0 4px 16px rgba(255, 209, 102, 0.2);
+}
+
+.crowned-info-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crowned-info-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(255, 209, 102, 0.5));
+}
+
+.crowned-info-text {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: #f8f9fa;
+  font-weight: 500;
+}
+
+.crowned-info-text b {
+  color: #ffd166;
+  font-weight: 800;
+}
+
+.crowned-hud-badge.ca-pending-badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: #adb5bd;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.crowned-king-status {
+  font-size: 0.74rem;
+  color: #adb5bd;
+  font-weight: 600;
 }
 
 @media (max-width: 860px) {
@@ -4349,7 +4381,7 @@ body, html {
   }
   .crowned-hud-card {
     gap: 8px;
-    padding: 6px 10px 6px 12px;
+    padding: 8px 12px;
     border-radius: 14px;
     flex-wrap: wrap;
     justify-content: center;
@@ -4357,15 +4389,10 @@ body, html {
   .crowned-hud-divider {
     display: none;
   }
-  .btn-dethrone-cta {
-    font-size: 0.76rem;
-    padding: 6px 12px;
+  .crowned-hud-info-strip {
+    max-width: 100%;
+    font-size: 0.72rem;
   }
-}
-
-.btn-dethrone-cta:hover {
-  transform: scale(1.06);
-  box-shadow: 0 6px 24px rgba(255, 209, 102, 0.65);
 }
 
 /* ==========================================================================
