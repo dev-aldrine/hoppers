@@ -77,24 +77,24 @@ export function WorldArena({
   // High drifting clouds
   const clouds = useMemo(
     () => [
-      { pos: [-45, 42.0, -35], scale: 2.8, speed: 0.65 },
-      { pos: [25, 48.0, -48], scale: 3.2, speed: 0.5 },
-      { pos: [-30, 44.0, 32], scale: 2.8, speed: 0.6 },
-      { pos: [42, 38.0, 35], scale: 2.4, speed: 0.75 },
-      { pos: [8, 52.0, 8], scale: 3.5, speed: 0.4 },
-      { pos: [-55, 38.0, 15], scale: 2.6, speed: 0.65 },
-      { pos: [45, 46.0, -25], scale: 3.0, speed: 0.55 },
+      { pos: [-55, 72.0, -45], scale: 3.2, speed: 0.65 },
+      { pos: [35, 78.0, -58], scale: 3.6, speed: 0.5 },
+      { pos: [-40, 74.0, 42], scale: 3.2, speed: 0.6 },
+      { pos: [52, 68.0, 45], scale: 2.8, speed: 0.75 },
+      { pos: [12, 82.0, 12], scale: 4.0, speed: 0.4 },
+      { pos: [-65, 68.0, 25], scale: 3.0, speed: 0.65 },
+      { pos: [55, 76.0, -35], scale: 3.4, speed: 0.55 },
     ],
     []
   );
 
-  // Foothill & Valley Trees around the mountain base (r in 45m to 85m)
+  // Foothill & Valley Trees around the mountain base (r in 60m to 105m)
   const trees = useMemo(() => {
     const list = [];
-    const count = 64;
+    const count = 72;
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * Math.PI * 2 + (Math.sin(i * 3) * 0.25);
-      const r = 48 + (Math.cos(i * 4) * 28);
+      const r = 64 + (Math.cos(i * 4) * 32);
       const x = Math.cos(angle) * r;
       const z = Math.sin(angle) * r;
       const isPine = i % 2 === 0;
@@ -106,16 +106,16 @@ export function WorldArena({
 
   return (
     <group>
-      {/* ⛰️ Low-Poly Terrain with Grand Center Crown Mountain (Summit Y=32.0) */}
+      {/* ⛰️ Low-Poly Terrain with Grand Towering Crown Mountain (Summit Y=56.0) */}
       <ProceduralTerrain
         outerSize={850}
         segments={160}
-        summitHeight={32.0}
+        summitHeight={56.0}
       />
 
       {/* 👑 The Crown Summit Platform & Crowned King Character */}
       <KingSummit3D
-        summitPos={[0, 32.0, 0]}
+        summitPos={[0, 56.0, 0]}
         crownedKing={crownedKing}
         timerSeconds={timerSeconds}
         timerDuration={timerDuration}
@@ -130,7 +130,7 @@ export function WorldArena({
       ))}
 
       {/* Colorful Flower Field in the Valley */}
-      <FlowerField count={120} arenaRadius={80} />
+      <FlowerField count={140} arenaRadius={95} />
 
       {/* Foothill & Valley Pine/Oak Trees */}
       {trees.map((tree, i) =>

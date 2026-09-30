@@ -164,10 +164,10 @@ export function KingSummit3D({
     <group position={summitPos}>
       {/* ⛰️ Summit Golden Altar / Pedestal */}
       <group position={[0, -0.2, 0]}>
-        {/* Tier 1 Base Platform */}
+        {/* Tier 1 Base Platform (Lush Emerald & Gold Rim) */}
         <mesh position={[0, 0, 0]} receiveShadow>
           <cylinderGeometry args={[5.2, 5.8, 0.6, 24]} />
-          <meshStandardMaterial color="#2b2d42" roughness={0.7} metalness={0.2} />
+          <meshStandardMaterial color="#1b4332" roughness={0.4} metalness={0.6} />
         </mesh>
         
         {/* Tier 2 Polished Gold Platform */}
@@ -194,7 +194,7 @@ export function KingSummit3D({
           />
         </mesh>
 
-        {/* 4 Summit Rune Torches / Pillars */}
+        {/* 4 Summit Rune Torches / Pillars (Golden Bronze & Flame) */}
         {[
           [-3.2, -3.2],
           [3.2, -3.2],
@@ -204,7 +204,7 @@ export function KingSummit3D({
           <group key={`torch-${i}`} position={[px, 0.6, pz]}>
             <mesh castShadow>
               <cylinderGeometry args={[0.18, 0.25, 1.6, 8]} />
-              <meshStandardMaterial color="#495057" metalness={0.6} roughness={0.4} />
+              <meshStandardMaterial color="#c77dff" metalness={0.7} roughness={0.3} emissive="#7b2cbf" emissiveIntensity={0.3} />
             </mesh>
             <mesh position={[0, 0.9, 0]}>
               <octahedronGeometry args={[0.3, 0]} />

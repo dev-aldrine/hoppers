@@ -105,11 +105,11 @@ export function ProceduralTerrain({
   outerSize = 850,
   segments = 160,
   seed = 4242,
-  summitHeight = 18.0,
+  summitHeight = 56.0,
 }) {
   const waterRef = useRef();
 
-  // Generate Harmonious Low-Poly Terrain with Grand Center Crown Mountain
+  // Generate Harmonious Low-Poly Terrain with Grand Towering Crown Mountain
   const { geometry } = useMemo(() => {
     const simplex = new SimplexNoise2D(seed);
     const plane = new THREE.PlaneGeometry(outerSize, outerSize, segments, segments);
@@ -124,46 +124,46 @@ export function ProceduralTerrain({
 
       let y = 0;
 
-      // 🏔️ 1. Majestic Center Crown Mountain Peak (0 to 42m radius)
-      if (dist <= 42.0) {
-        if (dist <= 5.5) {
+      // 🏔️ 1. Towering Majestic Center Crown Mountain Peak (0 to 58m radius)
+      if (dist <= 58.0) {
+        if (dist <= 6.0) {
           // Flat summit plateau for the King pedestal at Y = summitHeight
           y = summitHeight;
         } else {
-          // Ascending conical mountain profile with rock facets
-          const t = (dist - 5.5) / 36.5; // 0 at summit rim, 1 at mountain base
+          // Ascending conical mountain profile with lush natural facets
+          const t = (dist - 6.0) / 52.0; // 0 at summit rim, 1 at mountain base
           const baseProfile = Math.cos(t * Math.PI * 0.5);
-          const rawElevation = THREE.MathUtils.lerp(0.0, summitHeight, Math.pow(baseProfile, 1.45));
+          const rawElevation = THREE.MathUtils.lerp(0.0, summitHeight, Math.pow(baseProfile, 1.35));
           
-          // Rocky facets and stepped terraces
-          const rockNoise = simplex.noise(x * 0.08, z * 0.08) * 1.4;
-          const terraceStep = 3.0;
+          // Natural organic slopes
+          const slopeNoise = simplex.noise(x * 0.06, z * 0.06) * 1.8;
+          const terraceStep = 3.5;
           const steppedY = Math.floor(rawElevation / terraceStep) * terraceStep;
-          const blendY = THREE.MathUtils.lerp(rawElevation + rockNoise, steppedY, 0.25);
+          const blendY = THREE.MathUtils.lerp(rawElevation + slopeNoise, steppedY, 0.18);
           y = Math.max(0.0, blendY);
         }
       } 
-      // 🌿 2. Lush Valley Meadows (42m to 90m radius)
-      else if (dist < 90.0) {
+      // 🌿 2. Lush Valley Meadows (58m to 105m radius)
+      else if (dist < 105.0) {
         const nGentle = simplex.fbm(x * 0.015, z * 0.015, 2, 2.0, 0.5);
-        y = Math.max(0.0, nGentle * 1.5);
+        y = Math.max(0.0, nGentle * 1.8);
       } 
-      // ⛰️ 3. Surrounding Rolling Mountain Ridges & Horizon Peaks (90m+)
+      // ⛰️ 3. Surrounding Rolling Mountain Ridges & Horizon Peaks (105m+)
       else {
-        const nMajor = simplex.fbm(x * 0.0055, z * 0.0055, 3, 2.0, 0.5);
+        const nMajor = simplex.fbm(x * 0.005, z * 0.005, 3, 2.0, 0.5);
         const nRolling = simplex.fbm(x * 0.012, z * 0.012, 3, 2.1, 0.45);
 
         const wave1 = Math.sin((nMajor + 0.4) * Math.PI * 0.85);
         const wave2 = Math.cos((nRolling + 0.2) * Math.PI * 0.9);
         
         let mountainHeight = Math.max(0, wave1 * 0.65 + wave2 * 0.35);
-        mountainHeight = Math.pow(mountainHeight, 1.25) * 22.0;
+        mountainHeight = Math.pow(mountainHeight, 1.25) * 26.0;
 
-        const terraceStep = 2.8;
+        const terraceStep = 3.0;
         const terracedH = Math.floor(mountainHeight / terraceStep) * terraceStep;
-        mountainHeight = THREE.MathUtils.lerp(mountainHeight, terracedH, 0.25);
+        mountainHeight = THREE.MathUtils.lerp(mountainHeight, terracedH, 0.2);
 
-        const blendDist = Math.max(0.0, Math.min(1.0, (dist - 90.0) / 35.0));
+        const blendDist = Math.max(0.0, Math.min(1.0, (dist - 105.0) / 40.0));
         const smoothstepBlend = blendDist * blendDist * (3.0 - 2.0 * blendDist);
         y = mountainHeight * smoothstepBlend;
       }
@@ -179,13 +179,14 @@ export function ProceduralTerrain({
     const normals = nonIndexed.attributes.normal;
     const vertexColors = [];
 
-    // 🎨 Biome Color Palette
-    const cSummitGold = new THREE.Color('#e0aaff');      // Summit Plateau Accent
-    const cGrass = new THREE.Color('#48bb35');           // Lush Valley Meadow
-    const cHighlandGreen = new THREE.Color('#38b000');   // Sunny Highland Green
-    const cPineGreen = new THREE.Color('#2d6a4f');       // Deep Alpine Pine Forest
-    const cSlateRock = new THREE.Color('#5c677d');       // Steep Cliff Slate Rock
-    const cLightRock = new THREE.Color('#8d99ae');       // Sunny Rocky Outcrops & Summit
+    // 🎨 Lush Vibrant Biome Color Palette (NO GRAY/STONE)
+    const cBrightSpring = new THREE.Color('#70e000');     // Electric Sunny Spring Green
+    const cLushMeadow = new THREE.Color('#38b000');       // Vibrant Lush Green
+    const cDeepGreen = new THREE.Color('#2d6a4f');        // Deep Emerald Green Slope
+    const cAlpineForest = new THREE.Color('#1b4332');     // Rich Alpine Evergreen
+    const cGoldenHighland = new THREE.Color('#d8f3dc');   // Soft Highland Lime
+    const cSunlitMoss = new THREE.Color('#52b788');       // Sunlit Summit Moss Green
+    const cWarmGrass = new THREE.Color('#55a630');        // Warm Valley Meadow
 
     for (let i = 0; i < nonIndexedPos.count; i++) {
       const y = nonIndexedPos.getY(i);
@@ -194,33 +195,36 @@ export function ProceduralTerrain({
       const dist = Math.sqrt(x * x + z * z);
       const ny = normals ? normals.getY(i) : 1.0;
 
-      let color = cGrass;
+      let color = cLushMeadow;
 
-      if (dist <= 6.0) {
-        // Flat summit peak
-        color = cLightRock;
-      } else if (dist <= 42.0) {
-        // Center Crown Mountain slope
-        if (ny < 0.72) {
-          color = y > 10.0 ? cLightRock : cSlateRock;
-        } else if (y > 12.0) {
-          color = cPineGreen;
+      if (dist <= 7.0) {
+        // Flat summit peak: Bright Emerald / Golden Highland
+        color = cSunlitMoss;
+      } else if (dist <= 58.0) {
+        // Center Crown Mountain slopes: Rich multi-tone emeralds and vibrant greens (no gray!)
+        if (ny < 0.65) {
+          // Steeper slopes get rich deep emerald
+          color = y > 24.0 ? cDeepGreen : cAlpineForest;
+        } else if (y > 36.0) {
+          color = cSunlitMoss;
+        } else if (y > 18.0) {
+          color = cWarmGrass;
         } else {
-          color = cGrass;
+          color = cBrightSpring;
         }
-      } else if (dist < 90.0) {
-        // Valley floor
-        color = cGrass;
+      } else if (dist < 105.0) {
+        // Valley floor: Bright spring meadows
+        color = ny > 0.9 ? cBrightSpring : cLushMeadow;
       } else {
-        // Outer mountain perimeter
-        if (ny < 0.65 && y > 2.0) {
-          color = y > 12.0 ? cLightRock : cSlateRock;
-        } else if (y < 6.0) {
-          color = cGrass;
-        } else if (y < 14.0) {
-          color = cPineGreen;
+        // Outer mountain perimeter: Lush rolling green hills
+        if (ny < 0.6) {
+          color = cAlpineForest;
+        } else if (y < 8.0) {
+          color = cLushMeadow;
+        } else if (y < 18.0) {
+          color = cDeepGreen;
         } else {
-          color = cHighlandGreen;
+          color = cSunlitMoss;
         }
       }
 

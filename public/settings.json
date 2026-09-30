@@ -1,7 +1,7 @@
 {
   "adminWallet": "3Pxv5rZVxFoBBFf57yE6opeyqqNbDWBGnB4TzvFBQwDN",
-  "mintAddress": "7cS8RYzdcSe28CzN6xdqdiBT5Fu9fyP1LFexEBPktAFo",
-  "heliusApiKey": "aac38acb-66a6-4494-870e-8bb5c14c051a",
+  "mintAddress": "2xs2ZEf8oXmNkpmuhQbRAdjerxhrR7E1Rr4Wfi9inEF3",
+  "heliusApiKey": "4JqE6KecmNzSSYfHiWQ5g1rGqCACqYDsxHtcaqMfpump",
   "solUsdPrice": 120.26,
   "minSpawnSol": 0.01,
   "telegramUrl": "",
@@ -42,5 +42,5 @@
       "wonAt": 1790623236481
     }
   ],
-  "updatedAt": 1790788415548
+  "updatedAt": 1790788801235
 }
