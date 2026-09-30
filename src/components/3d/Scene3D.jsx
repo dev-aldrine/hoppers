@@ -340,38 +340,6 @@ export function Scene3D({
               onRemoveFallenKing={onRemoveFallenKing}
             />
           </group>
-
-          {/* Render All Dynamic Walking Contender NPCs in the Valley */}
-          {npcs.map((npc) => {
-            const isFollowed =
-              selectedNpcId === npc.id ||
-              (selectedNpcId && (selectedNpcId === npc.wallet || selectedNpcId === npc.fullWallet));
-
-            return (
-              <PlayerNPC
-                key={npc.id}
-                {...npc}
-                arenaRadius={arenaRadius}
-                overallScale={overallScale}
-                groundOffset={groundOffset}
-                isStationary={isStationary}
-                tagOffsetY={tagOffsetY}
-                tagScale={tagScale}
-                isFollowed={Boolean(isFollowed)}
-                onUpdateHeadPos={(x, y, z) => {
-                  if (isFollowed) {
-                    followedHeadPos.current.set(x, y, z);
-                    hasFollowTarget.current = true;
-                  }
-                }}
-                onSelect={(selected) => {
-                  if (onSelectNpc) {
-                    onSelectNpc(selectedNpcId === selected.id ? null : selected);
-                  }
-                }}
-              />
-            );
-          })}
         </Suspense>
       </Canvas>
     </div>

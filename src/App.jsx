@@ -584,13 +584,15 @@ export default function App() {
     updateHolders();
     updateQualifiedKing();
     const holderInterval = setInterval(updateHolders, 25000);
-    const kingSyncInterval = setInterval(updateQualifiedKing, 4000);
+    const kingSyncInterval = setInterval(updateQualifiedKing, 3000);
+    const feeSyncInterval = setInterval(refreshVolumeAndFees, 3000);
 
     return () => {
       if (unsubscribeCurve) unsubscribeCurve();
       if (unsubscribeTrades) unsubscribeTrades();
       clearInterval(holderInterval);
       clearInterval(kingSyncInterval);
+      clearInterval(feeSyncInterval);
     };
   }, [connection, settings.mintAddress, settings.heliusApiKey, handleLiveTrade]);
 
@@ -803,22 +805,27 @@ export default function App() {
       {/* 👑 Top Center CROWNED HUD */}
       <div className="top-crowned-hud">
         <div className="crowned-hud-card">
-          <div className="crowned-hud-crown">👑</div>
-          <div className="crowned-hud-info">
-            <div className="crowned-hud-title-row">
-              <span className="crowned-hud-title">CROWNED</span>
-              <span className="crowned-hud-badge">60s CROWN TIMER</span>
-            </div>
-            <div className="crowned-hud-details">
-              <span className="crowned-king-wallet" title={crownedKing?.wallet}>
-                {crownedKing?.wallet ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}` : 'Waiting for Crown Holder...'}
-              </span>
-              <span className="crowned-hud-dot">•</span>
-              <span className="crowned-buy-tag">🔥 {crownedKing?.buyAmountSol || 0.25} SOL Buy</span>
+          {/* 1. Crown & Active King Section */}
+          <div className="crowned-hud-main">
+            <div className="crowned-hud-crown">👑</div>
+            <div className="crowned-hud-info">
+              <div className="crowned-hud-title-row">
+                <span className="crowned-hud-title">CROWNED</span>
+                <span className="crowned-hud-badge">60s REIGN</span>
+              </div>
+              <div className="crowned-hud-details">
+                <span className="crowned-king-wallet" title={crownedKing?.wallet}>
+                  {crownedKing?.wallet ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}` : 'Waiting for King...'}
+                </span>
+                <span className="crowned-hud-dot">•</span>
+                <span className="crowned-buy-tag">🔥 {crownedKing?.buyAmountSol || 0.25} SOL</span>
+              </div>
             </div>
           </div>
 
-          {/* ⏱️ Circular / Progress Bar Timer */}
+          <div className="crowned-hud-divider" />
+
+          {/* 2. 60-Second Countdown Timer Box */}
           <div className="crowned-hud-timer-box">
             <span className="crowned-timer-num">{timerSeconds.toFixed(1)}s</span>
             <div className="crowned-timer-track">
@@ -829,14 +836,18 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bounty Fee Pool (0.30% Creator Fees) */}
+          <div className="crowned-hud-divider" />
+
+          {/* 3. Bounty Fee Pool (0.30% Creator Fees) */}
           <div className="crowned-hud-bounty">
             <span className="crowned-bounty-label">0.30% Creator Rewards:</span>
-            <span className="crowned-bounty-val">◎ {accumulatedFeesSol.toFixed(3)} SOL</span>
-            <span className="crowned-bounty-usd">≈ ${(accumulatedFeesSol * (marketCapData.solUsdPrice || 119.5)).toFixed(2)}</span>
+            <div className="crowned-bounty-vals-row">
+              <span className="crowned-bounty-val">◎ {accumulatedFeesSol.toFixed(3)} SOL</span>
+              <span className="crowned-bounty-usd">≈ ${(accumulatedFeesSol * (marketCapData.solUsdPrice || 119.5)).toFixed(2)}</span>
+            </div>
           </div>
 
-          {/* Dethrone Action CTA */}
+          {/* 4. Dethrone Action CTA Button */}
           <button
             type="button"
             className="btn-dethrone-cta"
@@ -844,22 +855,8 @@ export default function App() {
             title="Buy 0.25+ SOL to Dethrone and Get Crowned"
           >
             <span>⚡</span>
-            <span>Dethrone & Get Crowned (0.25+ SOL)</span>
+            <span>Dethrone & Crown (0.25+ SOL)</span>
           </button>
-        </div>
-      </div>
-
-      {/* UI Widgets Overlay */}
-      <div className="ui-overlay">
-        {/* Left HUD: Dedicated Leaderboard */}
-        <div className="ui-left">
-          <TradeFeed
-            trades={trades}
-            npcs={enrichedNpcs}
-            crownedKing={crownedKing}
-            selectedNpcId={selectedNpc?.id || null}
-            onSelectNpc={(npc) => setSelectedNpc(npc)}
-          />
         </div>
       </div>
 

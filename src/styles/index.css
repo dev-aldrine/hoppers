@@ -4124,35 +4124,47 @@ body, html {
    ========================================================================== */
 .top-crowned-hud {
   position: absolute;
-  top: 18px;
+  top: 16px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 90;
   pointer-events: auto;
+  width: max-content;
+  max-width: calc(100vw - 32px);
 }
 
 .crowned-hud-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  background: rgba(10, 16, 28, 0.94);
-  backdrop-filter: blur(16px);
-  border: 2px solid #ffd166;
+  gap: 14px;
+  background: rgba(10, 16, 28, 0.95);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1.5px solid #ffd166;
   border-radius: 100px;
-  padding: 8px 14px 8px 18px;
-  box-shadow: 0 0 35px rgba(255, 209, 102, 0.45), 0 12px 40px rgba(0, 0, 0, 0.85);
+  padding: 8px 14px 8px 16px;
+  box-shadow: 0 0 30px rgba(255, 209, 102, 0.35), 0 12px 36px rgba(0, 0, 0, 0.85);
   transition: all 0.25s ease;
+  user-select: none;
 }
 
 .crowned-hud-card:hover {
   border-color: #00f5d4;
-  box-shadow: 0 0 45px rgba(0, 245, 212, 0.55), 0 16px 48px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 0 35px rgba(0, 245, 212, 0.45), 0 16px 44px rgba(0, 0, 0, 0.9);
+}
+
+.crowned-hud-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .crowned-hud-crown {
-  font-size: 1.8rem;
-  filter: drop-shadow(0 0 10px rgba(255, 209, 102, 0.8));
+  font-size: 1.7rem;
+  filter: drop-shadow(0 0 8px rgba(255, 209, 102, 0.8));
   animation: floatBounce 2.5s ease-in-out infinite;
+  line-height: 1;
 }
 
 @keyframes floatBounce {
@@ -4169,34 +4181,34 @@ body, html {
 .crowned-hud-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .crowned-hud-title {
   font-family: var(--font-heading, sans-serif);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 900;
   color: #ffd166;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .crowned-hud-badge {
   font-family: var(--font-mono, monospace);
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  background: rgba(255, 209, 102, 0.2);
+  background: rgba(255, 209, 102, 0.18);
   color: #ffd166;
   border: 1px solid rgba(255, 209, 102, 0.4);
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
 }
 
 .crowned-hud-details {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
+  gap: 5px;
+  font-size: 0.8rem;
 }
 
 .crowned-king-wallet {
@@ -4207,13 +4219,21 @@ body, html {
 
 .crowned-hud-dot {
   color: #64748b;
+  font-size: 0.7rem;
 }
 
 .crowned-buy-tag {
   font-family: var(--font-mono, monospace);
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   font-weight: 800;
   color: #00f5d4;
+}
+
+.crowned-hud-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
 }
 
 /* ⏱️ Timer Box */
@@ -4221,24 +4241,23 @@ body, html {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  min-width: 85px;
-  padding: 0 8px;
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  gap: 3px;
+  min-width: 75px;
+  flex-shrink: 0;
 }
 
 .crowned-timer-num {
   font-family: var(--font-mono, monospace);
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 900;
   color: #00f5d4;
   letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .crowned-timer-track {
   width: 100%;
-  height: 6px;
+  height: 5px;
   background: rgba(255, 255, 255, 0.12);
   border-radius: 100px;
   overflow: hidden;
@@ -4266,22 +4285,30 @@ body, html {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 0 6px;
+  gap: 1px;
+  flex-shrink: 0;
 }
 
 .crowned-bounty-label {
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   font-weight: 800;
   color: #94a3b8;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.crowned-bounty-vals-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
 }
 
 .crowned-bounty-val {
   font-family: var(--font-mono, monospace);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 900;
   color: #ffd166;
-  line-height: 1.1;
+  line-height: 1;
 }
 
 .crowned-bounty-usd {
@@ -4295,18 +4322,45 @@ body, html {
 .btn-dethrone-cta {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: linear-gradient(135deg, #ffd166 0%, #ff9f1c 100%);
   color: #0b0f19;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 900;
-  padding: 10px 18px;
+  padding: 8px 16px;
   border-radius: 100px;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(255, 209, 102, 0.4);
+  box-shadow: 0 4px 14px rgba(255, 209, 102, 0.4);
   transition: all 0.2s ease;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-dethrone-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 209, 102, 0.6);
+}
+
+@media (max-width: 860px) {
+  .top-crowned-hud {
+    top: 10px;
+    max-width: calc(100vw - 20px);
+  }
+  .crowned-hud-card {
+    gap: 8px;
+    padding: 6px 10px 6px 12px;
+    border-radius: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .crowned-hud-divider {
+    display: none;
+  }
+  .btn-dethrone-cta {
+    font-size: 0.76rem;
+    padding: 6px 12px;
+  }
 }
 
 .btn-dethrone-cta:hover {
