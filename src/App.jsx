@@ -827,7 +827,7 @@ export default function App() {
                     <div className="crowned-hud-details">
                       {!isRealCA ? (
                         <span className="crowned-king-status" style={{ color: '#ffd166', fontStyle: 'italic', fontWeight: 600 }}>
-                          Updating CA...
+                          Last buyer (no timer)
                         </span>
                       ) : (
                         <>
@@ -852,15 +852,22 @@ export default function App() {
           <div className="crowned-hud-divider" />
 
           {/* 2. 60-Second Countdown Timer Box */}
-          <div className="crowned-hud-timer-box">
-            <span className="crowned-timer-num">{timerSeconds.toFixed(1)}s</span>
-            <div className="crowned-timer-track">
-              <div
-                className={`crowned-timer-fill ${timerSeconds <= 15 ? 'urgent' : ''}`}
-                style={{ width: `${Math.max(0, Math.min(100, (timerSeconds / timerDuration) * 100))}%` }}
-              />
-            </div>
-          </div>
+          {(() => {
+            const rawMint = settings.mintAddress ? settings.mintAddress.trim() : '';
+            const isRealCA = Boolean(rawMint && rawMint.length >= 32 && !rawMint.toLowerCase().includes('updating'));
+
+            return (
+              <div className="crowned-hud-timer-box">
+                <span className="crowned-timer-num">{isRealCA ? `${timerSeconds.toFixed(1)}s` : 'No Timer'}</span>
+                <div className="crowned-timer-track">
+                  <div
+                    className={`crowned-timer-fill ${timerSeconds <= 15 && isRealCA ? 'urgent' : ''}`}
+                    style={{ width: `${isRealCA ? Math.max(0, Math.min(100, (timerSeconds / timerDuration) * 100)) : 0}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
 
           <div className="crowned-hud-divider" />
 

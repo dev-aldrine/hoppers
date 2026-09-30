@@ -148,20 +148,31 @@ export function ChallengeKingModal({
         {/* Body */}
         <div className="launch-modal-body">
           {/* King Crown Banner */}
-          <div className="challenge-king-spotlight">
-            <div className="challenge-crown-icon">👑</div>
-            <div className="challenge-king-info">
-              <span className="challenge-king-sub">Current Crown Holder</span>
-              <div className="challenge-king-name">
-                {crownedKing?.wallet ? `${crownedKing.wallet.slice(0, 6)}...${crownedKing.wallet.slice(-6)}` : 'None'}
+          {(() => {
+            const rawMint = settings?.mintAddress?.trim() || '';
+            const isRealCA = Boolean(rawMint && rawMint.length >= 32 && !rawMint.toLowerCase().includes('updating'));
+
+            return (
+              <div className="challenge-king-spotlight">
+                <div className="challenge-crown-icon">👑</div>
+                <div className="challenge-king-info">
+                  <span className="challenge-king-sub">Current Crown Holder</span>
+                  <div className="challenge-king-name">
+                    {isRealCA && crownedKing?.wallet
+                      ? `${crownedKing.wallet.slice(0, 6)}...${crownedKing.wallet.slice(-6)}`
+                      : 'Last buyer (no timer)'}
+                  </div>
+                  {isRealCA && (
+                    <div className="challenge-king-stat-row">
+                      <span>🔥 Buy: {crownedKing?.buyAmountSol || 0.25} SOL</span>
+                      <span>•</span>
+                      <span>⏱️ {timerSeconds.toFixed(1)}s remaining</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="challenge-king-stat-row">
-                <span>🔥 Buy: {crownedKing?.buyAmountSol || 0.25} SOL</span>
-                <span>•</span>
-                <span>⏱️ {timerSeconds.toFixed(1)}s remaining</span>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Rules / Mechanic Card */}
           <div className="challenge-rules-card">
