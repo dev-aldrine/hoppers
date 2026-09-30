@@ -592,8 +592,8 @@ export default function App() {
     updateHolders();
     updateQualifiedKing();
     const holderInterval = setInterval(updateHolders, 25000);
-    const kingSyncInterval = setInterval(updateQualifiedKing, 3000);
-    const feeSyncInterval = setInterval(refreshVolumeAndFees, 3000);
+    const kingSyncInterval = setInterval(updateQualifiedKing, 4000);
+    const feeSyncInterval = setInterval(refreshVolumeAndFees, 6000);
 
     return () => {
       if (unsubscribeCurve) unsubscribeCurve();

@@ -229,7 +229,56 @@ export function subscribeRealtimeTrades(connection, mintAddress, onTrade, getSol
   const cleanMint = mintAddress.trim();
   let isClosed = false;
   let ws = null;
+  let logsSubId = null;
 
+  // 1. Solana On-Chain Logs listener for instant (< 150ms) trade & dethrone triggers
+  if (connection) {
+    try {
+      const pda = getBondingCurvePDA(cleanMint);
+      const targetPubkey = pda || new PublicKey(cleanMint);
+      logsSubId = connection.onLogs(
+        targetPubkey,
+        async (logsContext) => {
+          if (isClosed || logsContext.err) return;
+          try {
+            const sig = logsContext.signature;
+            let tx = null;
+            try {
+              tx = await connection.getParsedTransaction(sig, { maxSupportedTransactionVersion: 0 });
+            } catch (e0) {
+              try {
+                tx = await connection.getParsedTransaction(sig, { maxSupportedTransactionVersion: 1 });
+              } catch (e1) {}
+            }
+
+            if (tx && tx.meta && !tx.meta.err) {
+              const accountKeys = tx.transaction.message.accountKeys;
+              const feePayer = accountKeys[0]?.pubkey?.toBase58();
+              const preBal = tx.meta.preBalances[0] || 0;
+              const postBal = tx.meta.postBalances[0] || 0;
+              const solDiff = (preBal - postBal) / 1e9;
+              const isBuy = solDiff > 0.001;
+              const solAmount = isBuy ? Math.max(0.001, Number(solDiff.toFixed(3))) : 0.01;
+
+              if (feePayer && !KNOWN_POOL_ADDRESSES.has(feePayer)) {
+                onTrade({
+                  mint: cleanMint,
+                  traderPublicKey: feePayer,
+                  txType: isBuy ? 'buy' : 'sell',
+                  solAmount,
+                  signature: sig,
+                  timestamp: Date.now(),
+                });
+              }
+            }
+          } catch (e) {}
+        },
+        'confirmed'
+      );
+    } catch (e) {}
+  }
+
+  // 2. High-performance PumpPortal WebSocket stream
   const connectWs = () => {
     if (isClosed) return;
     try {
@@ -254,7 +303,7 @@ export function subscribeRealtimeTrades(connection, mintAddress, onTrade, getSol
 
       ws.onerror = () => {};
       ws.onclose = () => {
-        if (!isClosed) setTimeout(connectWs, 4000);
+        if (!isClosed) setTimeout(connectWs, 5000);
       };
     } catch (e) {}
   };
@@ -263,6 +312,11 @@ export function subscribeRealtimeTrades(connection, mintAddress, onTrade, getSol
 
   return () => {
     isClosed = true;
+    if (logsSubId !== null && connection) {
+      try {
+        connection.removeOnLogsListener(logsSubId);
+      } catch (e) {}
+    }
     if (ws) {
       try {
         if (ws.readyState === WebSocket.OPEN) {
@@ -390,6 +444,77 @@ export async function fetchHolders(connection, mintAddress, minSolThreshold = 0.
 // Alias for backward compatibility
 export const fetchTopHolders = fetchHolders;
 
+// Centralized Enhanced Transactions Cache with request deduplication & 429 backoff
+const txCache = new Map(); // mint -> { timestamp, data, inFlightPromise, rateLimitedUntil }
+
+async function fetchCachedEnhancedTransactions(mintAddress, apiKey) {
+  if (!mintAddress || !isValidPublicKey(mintAddress)) return [];
+  const cleanMint = mintAddress.trim();
+  const effectiveApiKey = (apiKey && isValidHeliusApiKey(apiKey)) ? apiKey.trim() : DEFAULT_HELIUS_API_KEY;
+  if (!effectiveApiKey) return [];
+
+  const now = Date.now();
+  const cacheEntry = txCache.get(cleanMint);
+
+  // If rate-limited (429), respect cooldown (12s)
+  if (cacheEntry?.rateLimitedUntil && now < cacheEntry.rateLimitedUntil) {
+    return cacheEntry.data || [];
+  }
+
+  // Return cached result if fresh (< 4000ms)
+  if (cacheEntry?.data && now - cacheEntry.timestamp < 4000) {
+    return cacheEntry.data;
+  }
+
+  // If a request is already in flight, reuse its promise
+  if (cacheEntry?.inFlightPromise) {
+    return cacheEntry.inFlightPromise;
+  }
+
+  const fetchPromise = (async () => {
+    try {
+      const url = `https://api.helius.xyz/v0/addresses/${cleanMint}/transactions?api-key=${effectiveApiKey}`;
+      const res = await fetch(url);
+      if (res.status === 429) {
+        // Cooldown for 15 seconds on 429 to avoid hammering endpoint
+        txCache.set(cleanMint, {
+          timestamp: now,
+          data: cacheEntry?.data || [],
+          inFlightPromise: null,
+          rateLimitedUntil: now + 15000,
+        });
+        return cacheEntry?.data || [];
+      }
+      if (res.ok) {
+        const txs = await res.json();
+        const validTxs = Array.isArray(txs) ? txs : [];
+        txCache.set(cleanMint, {
+          timestamp: Date.now(),
+          data: validTxs,
+          inFlightPromise: null,
+          rateLimitedUntil: 0,
+        });
+        return validTxs;
+      }
+    } catch (e) {
+      // Silently catch network failures
+    } finally {
+      const entry = txCache.get(cleanMint);
+      if (entry) entry.inFlightPromise = null;
+    }
+    return cacheEntry?.data || [];
+  })();
+
+  txCache.set(cleanMint, {
+    timestamp: cacheEntry?.timestamp || 0,
+    data: cacheEntry?.data || [],
+    inFlightPromise: fetchPromise,
+    rateLimitedUntil: cacheEntry?.rateLimitedUntil || 0,
+  });
+
+  return fetchPromise;
+}
+
 /**
  * Fetches the legitimate last on-chain buyer for this token who bought >= minSol (default 0.25 SOL)
  * Multi-layer pipeline: Helius Enhanced Transactions -> Solana RPC Parsed Signatures -> PumpPortal
@@ -397,108 +522,104 @@ export const fetchTopHolders = fetchHolders;
 export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 0.25, apiKey = null) {
   if (!mintAddress || !isValidPublicKey(mintAddress)) return null;
   const cleanMint = mintAddress.trim();
-  const effectiveApiKey = (apiKey && isValidHeliusApiKey(apiKey)) ? apiKey.trim() : DEFAULT_HELIUS_API_KEY;
 
-  // 1. High-Performance Helius Enhanced Transaction Parser (< 300ms)
-  if (effectiveApiKey) {
-    try {
-      const url = `https://api.helius.xyz/v0/addresses/${cleanMint}/transactions?api-key=${effectiveApiKey}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const txs = await res.json();
-        if (Array.isArray(txs)) {
-          for (const tx of txs) {
-            const tokenTransfers = tx.tokenTransfers || [];
-            const feePayer = tx.feePayer;
+  // 1. High-Performance Helius Enhanced Transaction Parser (Cached & Rate-Limit Proof)
+  try {
+    const txs = await fetchCachedEnhancedTransactions(cleanMint, apiKey);
+    if (Array.isArray(txs) && txs.length > 0) {
+      for (const tx of txs) {
+        const tokenTransfers = tx.tokenTransfers || [];
+        const feePayer = tx.feePayer;
 
-            // Find if tokens of this mint were received by a legitimate user wallet
-            const tokenTransfer = tokenTransfers.find(
-              (tt) =>
-                tt.mint === cleanMint &&
-                tt.tokenAmount > 0 &&
-                tt.toUserAccount &&
-                !KNOWN_POOL_ADDRESSES.has(tt.toUserAccount)
-            );
-
-            if (tokenTransfer) {
-              const buyerWallet = tokenTransfer.toUserAccount || feePayer;
-
-              // Calculate net SOL spent by the buyer
-              let solSpent = 0;
-              if (tx.accountData) {
-                const buyerAcc = tx.accountData.find(
-                  (a) => a.account === buyerWallet || a.account === feePayer
-                );
-                if (buyerAcc && buyerAcc.nativeBalanceChange < 0) {
-                  solSpent = Math.abs(buyerAcc.nativeBalanceChange) / 1e9;
-                }
-              }
-
-              if (solSpent === 0 && tx.nativeTransfers) {
-                const spentTransfers = tx.nativeTransfers.filter(
-                  (nt) => nt.fromUserAccount === buyerWallet || nt.fromUserAccount === feePayer
-                );
-                const receivedTransfers = tx.nativeTransfers.filter(
-                  (nt) => nt.toUserAccount === buyerWallet || nt.toUserAccount === feePayer
-                );
-                const totalOut = spentTransfers.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-                const totalIn = receivedTransfers.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-                if (totalOut > totalIn) {
-                  solSpent = (totalOut - totalIn) / 1e9;
-                }
-              }
-
-              if (solSpent >= minSol && buyerWallet && !KNOWN_POOL_ADDRESSES.has(buyerWallet)) {
-                return {
-                  wallet: buyerWallet,
-                  buyAmountSol: Number(solSpent.toFixed(3)),
-                  timestamp: tx.timestamp ? tx.timestamp * 1000 : Date.now(),
-                  signature: tx.signature,
-                };
-              }
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('[pumpTracker] Helius enhanced tx parser warning:', e);
-    }
-  }
-
-  // 2. Query on-chain parsed transactions from Solana RPC
-  if (connection) {
-    try {
-      const pda = getBondingCurvePDA(cleanMint);
-      const targetPubkey = pda || new PublicKey(cleanMint);
-      const sigs = await connection.getSignaturesForAddress(targetPubkey, { limit: 20 });
-      
-      if (sigs && sigs.length > 0) {
-        const txs = await connection.getParsedTransactions(
-          sigs.slice(0, 10).map((s) => s.signature),
-          { maxSupportedTransactionVersion: 0 }
+        // Find if tokens of this mint were received by a legitimate user wallet
+        const tokenTransfer = tokenTransfers.find(
+          (tt) =>
+            tt.mint === cleanMint &&
+            tt.tokenAmount > 0 &&
+            tt.toUserAccount &&
+            !KNOWN_POOL_ADDRESSES.has(tt.toUserAccount)
         );
 
-        for (const tx of txs) {
-          if (!tx || !tx.meta || tx.meta.err) continue;
-          const accountKeys = tx.transaction.message.accountKeys;
-          const feePayer = accountKeys[0]?.pubkey?.toBase58();
-          const preBal = tx.meta.preBalances[0];
-          const postBal = tx.meta.postBalances[0];
-          const solSpent = (preBal - postBal) / 1e9;
+        if (tokenTransfer) {
+          const buyerWallet = tokenTransfer.toUserAccount || feePayer;
 
-          if (solSpent >= minSol && feePayer && !KNOWN_POOL_ADDRESSES.has(feePayer)) {
+          // Calculate net SOL spent by the buyer
+          let solSpent = 0;
+          if (tx.accountData) {
+            const buyerAcc = tx.accountData.find(
+              (a) => a.account === buyerWallet || a.account === feePayer
+            );
+            if (buyerAcc && buyerAcc.nativeBalanceChange < 0) {
+              solSpent = Math.abs(buyerAcc.nativeBalanceChange) / 1e9;
+            }
+          }
+
+          if (solSpent === 0 && tx.nativeTransfers) {
+            const spentTransfers = tx.nativeTransfers.filter(
+              (nt) => nt.fromUserAccount === buyerWallet || nt.fromUserAccount === feePayer
+            );
+            const receivedTransfers = tx.nativeTransfers.filter(
+              (nt) => nt.toUserAccount === buyerWallet || nt.toUserAccount === feePayer
+            );
+            const totalOut = spentTransfers.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+            const totalIn = receivedTransfers.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+            if (totalOut > totalIn) {
+              solSpent = (totalOut - totalIn) / 1e9;
+            }
+          }
+
+          if (solSpent >= minSol && buyerWallet && !KNOWN_POOL_ADDRESSES.has(buyerWallet)) {
             return {
-              wallet: feePayer,
+              wallet: buyerWallet,
               buyAmountSol: Number(solSpent.toFixed(3)),
-              timestamp: tx.blockTime ? tx.blockTime * 1000 : Date.now(),
-              signature: tx.transaction.signatures[0],
+              timestamp: tx.timestamp ? tx.timestamp * 1000 : Date.now(),
+              signature: tx.signature,
             };
           }
         }
       }
-    } catch (e) {
-      console.warn('[pumpTracker] Solana RPC parsed signatures fallback warning:', e);
     }
+  } catch (e) {}
+
+  // 2. Query on-chain parsed transactions from Solana RPC with v0 & v1 fallback
+  if (connection) {
+    try {
+      const pda = getBondingCurvePDA(cleanMint);
+      const targetPubkey = pda || new PublicKey(cleanMint);
+      const sigs = await connection.getSignaturesForAddress(targetPubkey, { limit: 10 });
+      
+      if (sigs && sigs.length > 0) {
+        const sigList = sigs.slice(0, 6).map((s) => s.signature);
+        let txs = null;
+        try {
+          txs = await connection.getParsedTransactions(sigList, { maxSupportedTransactionVersion: 0 });
+        } catch (err0) {
+          try {
+            txs = await connection.getParsedTransactions(sigList, { maxSupportedTransactionVersion: 1 });
+          } catch (err1) {}
+        }
+
+        if (Array.isArray(txs)) {
+          for (const tx of txs) {
+            if (!tx || !tx.meta || tx.meta.err) continue;
+            const accountKeys = tx.transaction.message.accountKeys;
+            const feePayer = accountKeys[0]?.pubkey?.toBase58();
+            const preBal = tx.meta.preBalances[0];
+            const postBal = tx.meta.postBalances[0];
+            const solSpent = (preBal - postBal) / 1e9;
+
+            if (solSpent >= minSol && feePayer && !KNOWN_POOL_ADDRESSES.has(feePayer)) {
+              return {
+                wallet: feePayer,
+                buyAmountSol: Number(solSpent.toFixed(3)),
+                timestamp: tx.blockTime ? tx.blockTime * 1000 : Date.now(),
+                signature: tx.transaction.signatures[0],
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {}
   }
 
   return null;
@@ -510,67 +631,58 @@ export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 
 export async function fetchRecentTrades(connection, mintAddress, apiKey = null, solPrice = 119.5) {
   if (!mintAddress || !isValidPublicKey(mintAddress)) return [];
   const cleanMint = mintAddress.trim();
-  const effectiveApiKey = (apiKey && isValidHeliusApiKey(apiKey)) ? apiKey.trim() : DEFAULT_HELIUS_API_KEY;
 
-  if (effectiveApiKey) {
-    try {
-      const url = `https://api.helius.xyz/v0/addresses/${cleanMint}/transactions?api-key=${effectiveApiKey}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const txs = await res.json();
-        if (Array.isArray(txs)) {
-          const trades = [];
-          for (const tx of txs) {
-            const tokenTransfers = tx.tokenTransfers || [];
-            const feePayer = tx.feePayer;
+  try {
+    const txs = await fetchCachedEnhancedTransactions(cleanMint, apiKey);
+    if (Array.isArray(txs)) {
+      const trades = [];
+      for (const tx of txs) {
+        const tokenTransfers = tx.tokenTransfers || [];
+        const feePayer = tx.feePayer;
 
-            const tokenTransfer = tokenTransfers.find((tt) => tt.mint === cleanMint);
-            if (!tokenTransfer) continue;
+        const tokenTransfer = tokenTransfers.find((tt) => tt.mint === cleanMint);
+        if (!tokenTransfer) continue;
 
-            const isBuy =
-              tokenTransfer.toUserAccount === feePayer ||
-              (tokenTransfer.toUserAccount && !tokenTransfer.toUserAccount.startsWith('6EF8'));
-            const buyerWallet = tokenTransfer.toUserAccount || feePayer;
-            const sellerWallet = tokenTransfer.fromUserAccount || feePayer;
-            const targetWallet = isBuy ? buyerWallet : sellerWallet;
+        const isBuy =
+          tokenTransfer.toUserAccount === feePayer ||
+          (tokenTransfer.toUserAccount && !tokenTransfer.toUserAccount.startsWith('6EF8'));
+        const buyerWallet = tokenTransfer.toUserAccount || feePayer;
+        const sellerWallet = tokenTransfer.fromUserAccount || feePayer;
+        const targetWallet = isBuy ? buyerWallet : sellerWallet;
 
-            let solAmount = 0;
-            if (tx.accountData) {
-              const userAcc = tx.accountData.find(
-                (a) => a.account === targetWallet || a.account === feePayer
-              );
-              if (userAcc && userAcc.nativeBalanceChange) {
-                solAmount = Math.abs(userAcc.nativeBalanceChange) / 1e9;
-              }
-            }
-
-            if (solAmount === 0 && tx.nativeTransfers) {
-              const spent = tx.nativeTransfers.filter(
-                (n) => n.fromUserAccount === targetWallet || n.fromUserAccount === feePayer
-              );
-              solAmount = spent.reduce((s, t) => s + (Number(t.amount) || 0), 0) / 1e9;
-            }
-
-            if (solAmount > 0 && targetWallet && !KNOWN_POOL_ADDRESSES.has(targetWallet)) {
-              trades.push({
-                id: `tx-${tx.signature || Math.random().toString(36).substring(2, 6)}`,
-                wallet: `${targetWallet.slice(0, 4)}...${targetWallet.slice(-4)}`,
-                fullWallet: targetWallet,
-                solAmount: Number(solAmount.toFixed(3)),
-                usdValue: (solAmount * solPrice).toLocaleString(undefined, { maximumFractionDigits: 0 }),
-                txType: isBuy ? 'buy' : 'sell',
-                timestamp: tx.timestamp ? tx.timestamp * 1000 : Date.now(),
-                signature: tx.signature,
-              });
-            }
+        let solAmount = 0;
+        if (tx.accountData) {
+          const userAcc = tx.accountData.find(
+            (a) => a.account === targetWallet || a.account === feePayer
+          );
+          if (userAcc && userAcc.nativeBalanceChange) {
+            solAmount = Math.abs(userAcc.nativeBalanceChange) / 1e9;
           }
-          return trades;
+        }
+
+        if (solAmount === 0 && tx.nativeTransfers) {
+          const spent = tx.nativeTransfers.filter(
+            (n) => n.fromUserAccount === targetWallet || n.fromUserAccount === feePayer
+          );
+          solAmount = spent.reduce((s, t) => s + (Number(t.amount) || 0), 0) / 1e9;
+        }
+
+        if (solAmount > 0 && targetWallet && !KNOWN_POOL_ADDRESSES.has(targetWallet)) {
+          trades.push({
+            id: `tx-${tx.signature || Math.random().toString(36).substring(2, 6)}`,
+            wallet: `${targetWallet.slice(0, 4)}...${targetWallet.slice(-4)}`,
+            fullWallet: targetWallet,
+            solAmount: Number(solAmount.toFixed(3)),
+            usdValue: (solAmount * solPrice).toLocaleString(undefined, { maximumFractionDigits: 0 }),
+            txType: isBuy ? 'buy' : 'sell',
+            timestamp: tx.timestamp ? tx.timestamp * 1000 : Date.now(),
+            signature: tx.signature,
+          });
         }
       }
-    } catch (e) {
-      console.warn('[pumpTracker] fetchRecentTrades warning:', e);
+      return trades;
     }
-  }
+  } catch (e) {}
 
   return [];
 }
