@@ -252,54 +252,7 @@ export function subscribeRealtimeTrades(connection, mintAddress, onTrade, getSol
   let ws = null;
   let logsSubId = null;
 
-  // 1. Solana On-Chain Logs listener for instant (< 150ms) trade & dethrone triggers
-  if (connection) {
-    try {
-      const pda = getBondingCurvePDA(cleanMint);
-      const targetPubkey = pda || new PublicKey(cleanMint);
-      logsSubId = connection.onLogs(
-        targetPubkey,
-        async (logsContext) => {
-          if (isClosed || logsContext.err) return;
-          try {
-            const sig = logsContext.signature;
-            let tx = null;
-            try {
-              tx = await connection.getParsedTransaction(sig, { maxSupportedTransactionVersion: 0 });
-            } catch (e0) {
-              try {
-                tx = await connection.getParsedTransaction(sig, { maxSupportedTransactionVersion: 1 });
-              } catch (e1) {}
-            }
-
-            if (tx && tx.meta && !tx.meta.err) {
-              const accountKeys = tx.transaction.message.accountKeys;
-              const feePayer = accountKeys[0]?.pubkey?.toBase58();
-              const preBal = tx.meta.preBalances[0] || 0;
-              const postBal = tx.meta.postBalances[0] || 0;
-              const solDiff = (preBal - postBal) / 1e9;
-              const isBuy = solDiff > 0.001;
-              const solAmount = isBuy ? Math.max(0.001, Number(solDiff.toFixed(3))) : 0.01;
-
-              if (feePayer && !KNOWN_POOL_ADDRESSES.has(feePayer)) {
-                onTrade({
-                  mint: cleanMint,
-                  traderPublicKey: feePayer,
-                  txType: isBuy ? 'buy' : 'sell',
-                  solAmount,
-                  signature: sig,
-                  timestamp: Date.now(),
-                });
-              }
-            }
-          } catch (e) {}
-        },
-        'confirmed'
-      );
-    } catch (e) {}
-  }
-
-  // 2. High-performance PumpPortal WebSocket stream
+  // 1. High-performance PumpPortal WebSocket stream (< 100ms latency, zero RPC load)
   const connectWs = () => {
     if (isClosed) return;
     try {
@@ -554,6 +507,8 @@ async function fetchCachedEnhancedTransactions(mintAddress, apiKey) {
   return fetchPromise;
 }
 
+const lastBuyerCache = new Map();
+
 /**
  * Fetches the legitimate last on-chain buyer for this token who bought >= minSol (default 0.25 SOL)
  * Multi-layer pipeline: Helius Enhanced Transactions -> Solana RPC Parsed Signatures -> PumpPortal
@@ -561,6 +516,17 @@ async function fetchCachedEnhancedTransactions(mintAddress, apiKey) {
 export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 0.25, apiKey = null) {
   if (!mintAddress || !isValidPublicKey(mintAddress)) return null;
   const cleanMint = mintAddress.trim();
+
+  // Return cached qualified buyer if queried in last 4.5 seconds
+  const cachedBuyer = lastBuyerCache.get(cleanMint);
+  if (cachedBuyer && Date.now() - cachedBuyer.timestamp < 4500) {
+    return cachedBuyer.data;
+  }
+
+  const resolveBuyer = (buyer) => {
+    lastBuyerCache.set(cleanMint, { timestamp: Date.now(), data: buyer });
+    return buyer;
+  };
 
   // 1. High-Performance Helius Enhanced Transaction Parser (Cached & Rate-Limit Proof)
   try {
@@ -608,12 +574,12 @@ export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 
           }
 
           if (solSpent >= minSol && buyerWallet && !KNOWN_POOL_ADDRESSES.has(buyerWallet)) {
-            return {
+            return resolveBuyer({
               wallet: buyerWallet,
               buyAmountSol: Number(solSpent.toFixed(3)),
               timestamp: tx.timestamp ? tx.timestamp * 1000 : Date.now(),
               signature: tx.signature,
-            };
+            });
           }
         }
       }
@@ -662,12 +628,12 @@ export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 
             const solSpent = (preBal - postBal) / 1e9;
 
             if (solSpent >= minSol && feePayer && !KNOWN_POOL_ADDRESSES.has(feePayer)) {
-              return {
+              return resolveBuyer({
                 wallet: feePayer,
                 buyAmountSol: Number(solSpent.toFixed(3)),
                 timestamp: tx.blockTime ? tx.blockTime * 1000 : Date.now(),
                 signature: tx.transaction.signatures[0],
-              };
+              });
             }
           }
         }
@@ -675,7 +641,7 @@ export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 
     } catch (e) {}
   }
 
-  return null;
+  return resolveBuyer(null);
 }
 
 /**
