@@ -1,5 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 import { getBondingCurvePDA, decodeBondingCurveData, isValidPublicKey } from './bondingCurve.js';
+import { isValidHeliusApiKey, DEFAULT_HELIUS_API_KEY } from './heliusConnection.js';
 
 export const KNOWN_POOL_ADDRESSES = new Set([
   '6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P', // Pump.fun Program
@@ -396,7 +397,7 @@ export const fetchTopHolders = fetchHolders;
 export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 0.25, apiKey = null) {
   if (!mintAddress || !isValidPublicKey(mintAddress)) return null;
   const cleanMint = mintAddress.trim();
-  const effectiveApiKey = (apiKey && apiKey.trim()) || 'aac38acb-66a6-4494-870e-8bb5c14c051a';
+  const effectiveApiKey = (apiKey && isValidHeliusApiKey(apiKey)) ? apiKey.trim() : DEFAULT_HELIUS_API_KEY;
 
   // 1. High-Performance Helius Enhanced Transaction Parser (< 300ms)
   if (effectiveApiKey) {
@@ -509,7 +510,7 @@ export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 
 export async function fetchRecentTrades(connection, mintAddress, apiKey = null, solPrice = 119.5) {
   if (!mintAddress || !isValidPublicKey(mintAddress)) return [];
   const cleanMint = mintAddress.trim();
-  const effectiveApiKey = (apiKey && apiKey.trim()) || 'aac38acb-66a6-4494-870e-8bb5c14c051a';
+  const effectiveApiKey = (apiKey && isValidHeliusApiKey(apiKey)) ? apiKey.trim() : DEFAULT_HELIUS_API_KEY;
 
   if (effectiveApiKey) {
     try {

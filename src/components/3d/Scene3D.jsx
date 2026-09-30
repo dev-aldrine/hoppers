@@ -94,9 +94,9 @@ function ElasticPanCameraController({
 
         // Compute natural overview camera position preserving angle
         const camDir = new THREE.Vector3().subVectors(cam.position, target).setY(0);
-        if (camDir.lengthSq() < 0.1) camDir.set(24, 0, 28);
-        camDir.normalize().multiplyScalar(36.0);
-        tr.endCam.set(camDir.x, 22.0, camDir.z);
+        if (camDir.lengthSq() < 0.1) camDir.set(32, 0, 36);
+        camDir.normalize().multiplyScalar(46.0);
+        tr.endCam.set(camDir.x, 42.0, camDir.z);
         tr.endTarget.copy(defaultCenter);
       }
       prevSelectedId.current = selectedNpcId;
@@ -261,7 +261,7 @@ export function Scene3D({
   fallenKings = [],
   onRemoveFallenKing,
 }) {
-  const followedHeadPos = useRef(new THREE.Vector3(0, 19.5, 0));
+  const followedHeadPos = useRef(new THREE.Vector3(0, 33.5, 0));
   const hasFollowTarget = useRef(false);
 
   return (
@@ -274,7 +274,7 @@ export function Scene3D({
           }
         }}
         camera={{
-          position: [38, 32, 45],
+          position: [46, 46, 54],
           fov: 44,
           near: 0.1,
           far: 1400,
@@ -300,7 +300,7 @@ export function Scene3D({
 
         {/* Primary Sun Directional Light */}
         <directionalLight
-          position={[-15.0, 65.0, 70.0]}
+          position={[-15.0, 75.0, 70.0]}
           intensity={2.3}
           castShadow
           shadow-mapSize-width={2048}
@@ -316,14 +316,14 @@ export function Scene3D({
 
         {/* Warm Sunlight Fill */}
         <directionalLight
-          position={[10.0, 30.0, -50.0]}
+          position={[10.0, 40.0, -50.0]}
           intensity={0.4}
           color="#fff8e7"
         />
 
         {/* 🎯 Free Orbit & Dynamic Head-Follower Camera */}
         <ElasticPanCameraController
-          center={[0, 15.0, 0]}
+          center={[0, 24.0, 0]}
           selectedNpcId={selectedNpcId}
           followedHeadPos={followedHeadPos}
           hasFollowTarget={hasFollowTarget}

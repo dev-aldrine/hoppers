@@ -245,8 +245,8 @@ export function KingSummit3D({
         </group>
       )}
 
-      {/* 🏷️ Big Majestic Overhead Crown & Timer Badge */}
-      <SafeHtml position={[0, 9.5, 0]} center distanceFactor={52} occlude={false}>
+      {/* 🏷️ Big Majestic Overhead Crown & Timer Badge (+30% Y elevation) */}
+      <SafeHtml position={[0, 12.5, 0]} center distanceFactor={52} occlude={false}>
         <div className="king-summit-overhead-badge">
           {/* Crown Title Header */}
           <div className="king-badge-header">

@@ -106,16 +106,16 @@ export function WorldArena({
 
   return (
     <group>
-      {/* ⛰️ Low-Poly Terrain with Grand Center Crown Mountain (Summit Y=18.0) */}
+      {/* ⛰️ Low-Poly Terrain with Grand Center Crown Mountain (Summit Y=32.0) */}
       <ProceduralTerrain
         outerSize={850}
         segments={160}
-        summitHeight={18.0}
+        summitHeight={32.0}
       />
 
       {/* 👑 The Crown Summit Platform & Crowned King Character */}
       <KingSummit3D
-        summitPos={[0, 18.0, 0]}
+        summitPos={[0, 32.0, 0]}
         crownedKing={crownedKing}
         timerSeconds={timerSeconds}
         timerDuration={timerDuration}
