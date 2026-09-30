@@ -8,17 +8,20 @@ export function GlassHeader({
 }) {
   const [copied, setCopied] = useState(false);
 
+  const rawMint = settings?.mintAddress?.trim() || '';
+  const isRealCA = Boolean(rawMint && rawMint.length >= 32 && !rawMint.toLowerCase().includes('updating'));
+
   const handleCopyCA = () => {
-    if (settings?.mintAddress) {
-      navigator.clipboard.writeText(settings.mintAddress);
+    if (isRealCA) {
+      navigator.clipboard.writeText(rawMint);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const shortCA = settings?.mintAddress
-    ? `${settings.mintAddress.slice(0, 4)}...${settings.mintAddress.slice(-4)}`
-    : 'None';
+  const shortCA = isRealCA
+    ? `${rawMint.slice(0, 4)}...${rawMint.slice(-4)}`
+    : 'Updating CA';
 
   return (
     <header className="glass-header">
@@ -35,10 +38,17 @@ export function GlassHeader({
         </div>
 
         {/* Copy Contract Address Pill */}
-        <button className="ca-pill" onClick={handleCopyCA} title="Click to copy CA">
+        <button
+          className={`ca-pill ${!isRealCA ? 'ca-pending' : ''}`}
+          onClick={handleCopyCA}
+          title={isRealCA ? 'Click to copy CA' : 'CA updating soon'}
+          style={!isRealCA ? { cursor: 'default' } : {}}
+        >
           <span className="ca-label">CA:</span>
           <span className="ca-value">{shortCA}</span>
-          {copied ? <Check size={14} className="text-green" /> : <Copy size={14} />}
+          {isRealCA && (
+            copied ? <Check size={14} className="text-green" /> : <Copy size={14} />
+          )}
         </button>
       </div>
 
@@ -51,9 +61,9 @@ export function GlassHeader({
 
 
         {/* Pump.fun Direct Link */}
-        {settings?.mintAddress && (
+        {isRealCA && (
           <a
-            href={`https://pump.fun/${settings.mintAddress}`}
+            href={`https://pump.fun/${rawMint}`}
             target="_blank"
             rel="noreferrer"
             className="btn-pumpfun"

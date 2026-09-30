@@ -156,7 +156,14 @@ export function KingSummit3D({
   const timerPct = Math.max(0, Math.min(100, (timerSeconds / timerDuration) * 100));
   const isTimeLow = timerSeconds <= 15;
 
-  const formattedWallet = crownedKing?.wallet
+  const hasRealKing = Boolean(
+    crownedKing &&
+    crownedKing.wallet &&
+    crownedKing.wallet.length >= 32 &&
+    !crownedKing.wallet.toLowerCase().includes('updating')
+  );
+
+  const formattedWallet = hasRealKing
     ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}`
     : 'Waiting for King...';
 
@@ -232,7 +239,7 @@ export function KingSummit3D({
       </mesh>
 
       {/* 👑 Active Crowned King Character at Summit */}
-      {crownedKing && (
+      {hasRealKing && (
         <group ref={kingGroupRef} position={[0, 1.0, 0]} scale={[0.85, 0.85, 0.85]}>
           <primitive object={scene} />
 
@@ -254,7 +261,7 @@ export function KingSummit3D({
             <div className="king-badge-titles">
               <span className="king-badge-realm-title">CURRENT CROWN HOLDER</span>
               <span className="king-badge-wallet">
-                {formattedWallet} {crownedKing?.buyAmountSol ? `(🔥 ${crownedKing.buyAmountSol} SOL)` : ''}
+                {formattedWallet} {hasRealKing && crownedKing?.buyAmountSol ? `(🔥 ${crownedKing.buyAmountSol} SOL)` : ''}
               </span>
             </div>
           </div>
@@ -277,8 +284,12 @@ export function KingSummit3D({
 
           {/* Reward Bounty Banner */}
           <div className="king-bounty-chip">
-            <span>💰 0.30% Creator Rewards Pot:</span>
-            <strong>◎ {accumulatedFeesSol.toFixed(3)} SOL</strong>
+            <span>💰 0.30% Creator Rewards:</span>
+            <strong>
+              {accumulatedFeesSol >= 0.2
+                ? `◎ ${accumulatedFeesSol.toFixed(3)} SOL`
+                : 'Accumulating...'}
+            </strong>
           </div>
         </div>
       </SafeHtml>

@@ -169,7 +169,7 @@ export function ChallengeKingModal({
             <ul className="rules-list">
               <li>🏆 <strong>Buy minimum 0.25 SOL</strong> on Pump.fun or via instant dethrone to knock the current King off the mountain.</li>
               <li>⏱️ <strong>60-Second Timer Resets:</strong> Hold the peak for 60 seconds without being dethroned by another 0.25+ buyer.</li>
-              <li>💰 <strong>0.30% Creator Fee Redirection:</strong> 100% of all Pump.fun bonding curve creator reward fees (<strong>0.30% of trading volume = ◎ {accumulatedFeesSol.toFixed(3)} SOL</strong>) are redirected directly to the winner's wallet!</li>
+              <li>💰 <strong>0.30% Creator Fee Redirection:</strong> 100% of all Pump.fun bonding curve creator reward fees (<strong>0.30% of trading volume = {accumulatedFeesSol >= 0.2 ? `◎ ${accumulatedFeesSol.toFixed(3)} SOL` : 'Accumulating...'}</strong>) are redirected directly to the winner's wallet!</li>
             </ul>
           </div>
 

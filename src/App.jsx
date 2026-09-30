@@ -822,11 +822,31 @@ export default function App() {
                 <span className="crowned-hud-badge">60s REIGN</span>
               </div>
               <div className="crowned-hud-details">
-                <span className="crowned-king-wallet" title={crownedKing?.wallet}>
-                  {crownedKing?.wallet ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}` : 'Waiting for King...'}
-                </span>
-                <span className="crowned-hud-dot">•</span>
-                <span className="crowned-buy-tag">🔥 {crownedKing?.buyAmountSol || 0.25} SOL</span>
+                {(() => {
+                  const rawMint = settings.mintAddress ? settings.mintAddress.trim() : '';
+                  const isRealCA = Boolean(rawMint && rawMint.length >= 32 && !rawMint.toLowerCase().includes('updating'));
+                  const hasRealKing = Boolean(
+                    isRealCA &&
+                    crownedKing &&
+                    crownedKing.wallet &&
+                    crownedKing.wallet.length >= 32 &&
+                    !crownedKing.wallet.toLowerCase().includes('updating')
+                  );
+
+                  return (
+                    <>
+                      <span className="crowned-king-wallet" title={hasRealKing ? crownedKing.wallet : 'Waiting for King...'}>
+                        {hasRealKing ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}` : 'Waiting for King...'}
+                      </span>
+                      {hasRealKing && (
+                        <>
+                          <span className="crowned-hud-dot">•</span>
+                          <span className="crowned-buy-tag">🔥 {crownedKing?.buyAmountSol || 0.25} SOL</span>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -850,8 +870,16 @@ export default function App() {
           <div className="crowned-hud-bounty">
             <span className="crowned-bounty-label">0.30% Creator Rewards:</span>
             <div className="crowned-bounty-vals-row">
-              <span className="crowned-bounty-val">◎ {accumulatedFeesSol.toFixed(3)} SOL</span>
-              <span className="crowned-bounty-usd">≈ ${(accumulatedFeesSol * (marketCapData.solUsdPrice || 119.5)).toFixed(2)}</span>
+              <span className="crowned-bounty-val">
+                {accumulatedFeesSol >= 0.2
+                  ? `◎ ${accumulatedFeesSol.toFixed(3)} SOL`
+                  : 'Accumulating...'}
+              </span>
+              {accumulatedFeesSol >= 0.2 ? (
+                <span className="crowned-bounty-usd">≈ ${(accumulatedFeesSol * (marketCapData.solUsdPrice || 119.5)).toFixed(2)}</span>
+              ) : (
+                <span className="crowned-bounty-usd">Min 0.2 SOL</span>
+              )}
             </div>
           </div>
 
