@@ -10,7 +10,14 @@ import { LaunchBuildingModal } from './components/ui/LaunchBuildingModal';
 import { CameraHint } from './components/ui/CameraHint';
 import growersLogo from './assets/growers_wordmark.png';
 import { createSolanaConnection } from './solana/heliusConnection';
-import { subscribeBondingCurve, subscribeRealtimeTrades, fetchTopHolders, fetchLiveSolPrice, fetchLiveMarketCapSnapshot } from './solana/pumpTracker';
+import {
+  subscribeBondingCurve,
+  subscribeRealtimeTrades,
+  fetchTopHolders,
+  fetchLiveSolPrice,
+  fetchLiveMarketCapSnapshot,
+  fetchLastQualifiedBuyer,
+} from './solana/pumpTracker';
 import { isValidPublicKey } from './solana/bondingCurve';
 import { getProjectSettings, fetchSharedSettings, saveProjectSettings, usePhantomAuth } from './solana/phantomAuth';
 import {
@@ -499,13 +506,35 @@ export default function App() {
       });
     };
 
+    // 4. Legitimately fetch the last qualified >= 0.25 SOL on-chain buyer for this token
+    const updateQualifiedKing = () => {
+      fetchLastQualifiedBuyer(connection, settings.mintAddress, 0.25).then((qualifiedBuyer) => {
+        if (qualifiedBuyer && qualifiedBuyer.wallet) {
+          setCrownedKing((current) => {
+            if (!current || (qualifiedBuyer.timestamp && qualifiedBuyer.timestamp > (current.crownedAt || 0))) {
+              return {
+                id: `king-${qualifiedBuyer.wallet}-${qualifiedBuyer.timestamp}`,
+                wallet: qualifiedBuyer.wallet,
+                buyAmountSol: qualifiedBuyer.buyAmountSol || 0.25,
+                crownedAt: qualifiedBuyer.timestamp || Date.now(),
+              };
+            }
+            return current;
+          });
+        }
+      });
+    };
+
     updateHolders();
+    updateQualifiedKing();
     const holderInterval = setInterval(updateHolders, 25000);
+    const kingSyncInterval = setInterval(updateQualifiedKing, 20000);
 
     return () => {
       if (unsubscribeCurve) unsubscribeCurve();
       if (unsubscribeTrades) unsubscribeTrades();
       clearInterval(holderInterval);
+      clearInterval(kingSyncInterval);
     };
   }, [connection, settings.mintAddress, settings.heliusApiKey, handleLiveTrade]);
 
@@ -715,18 +744,18 @@ export default function App() {
         onRemoveFallenKing={handleRemoveFallenKing}
       />
 
-      {/* 👑 Top Center CROWNED King of the Mountain HUD */}
+      {/* 👑 Top Center CROWNED HUD */}
       <div className="top-crowned-hud">
         <div className="crowned-hud-card">
           <div className="crowned-hud-crown">👑</div>
           <div className="crowned-hud-info">
             <div className="crowned-hud-title-row">
-              <span className="crowned-hud-title">KING OF THE MOUNTAIN</span>
-              <span className="crowned-hud-badge">60s REIGN TIMER</span>
+              <span className="crowned-hud-title">CROWNED</span>
+              <span className="crowned-hud-badge">60s CROWN TIMER</span>
             </div>
             <div className="crowned-hud-details">
               <span className="crowned-king-wallet" title={crownedKing?.wallet}>
-                {crownedKing?.wallet ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}` : 'Waiting for King...'}
+                {crownedKing?.wallet ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}` : 'Waiting for Crown Holder...'}
               </span>
               <span className="crowned-hud-dot">•</span>
               <span className="crowned-buy-tag">🔥 {crownedKing?.buyAmountSol || 0.25} SOL Buy</span>
@@ -755,10 +784,10 @@ export default function App() {
             type="button"
             className="btn-dethrone-cta"
             onClick={() => setIsChallengeModalOpen(true)}
-            title="Buy 0.25+ SOL to Dethrone the King and Claim the Crown"
+            title="Buy 0.25+ SOL to Dethrone and Get Crowned"
           >
             <span>⚡</span>
-            <span>Dethrone King (0.25+ SOL)</span>
+            <span>Dethrone & Get Crowned (0.25+ SOL)</span>
           </button>
         </div>
       </div>

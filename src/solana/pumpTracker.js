@@ -346,3 +346,97 @@ export async function fetchHolders(connection, mintAddress, minSolThreshold = 0.
 
 // Alias for backward compatibility
 export const fetchTopHolders = fetchHolders;
+
+/**
+ * Fetches the legitimate last on-chain buyer for this token who bought >= minSol (default 0.25 SOL)
+ * Multi-layer pipeline: Pump.fun Trade History -> PumpPortal API -> On-Chain Solana RPC Signatures
+ */
+export async function fetchLastQualifiedBuyer(connection, mintAddress, minSol = 0.25) {
+  if (!mintAddress || !isValidPublicKey(mintAddress)) return null;
+  const cleanMint = mintAddress.trim();
+
+  // 1. Query Pump.fun official trade history endpoint
+  try {
+    const res = await fetch(`https://frontend-api.pump.fun/coins/trades/${cleanMint}?limit=50&offset=0`);
+    if (res.ok) {
+      const trades = await res.json();
+      if (Array.isArray(trades)) {
+        for (const t of trades) {
+          const isBuy = t.is_buy === true || t.type === 'buy' || t.tx_type === 'buy';
+          let solAmount = Number(t.sol_amount || t.solAmount || 0);
+          if (solAmount > 10000) {
+            solAmount = solAmount / 1e9; // Convert lamports to SOL
+          }
+          const userWallet = t.user || t.traderPublicKey || t.wallet;
+          if (isBuy && solAmount >= minSol && userWallet) {
+            return {
+              wallet: userWallet,
+              buyAmountSol: Number(solAmount.toFixed(2)),
+              timestamp: t.timestamp ? (t.timestamp < 1e11 ? t.timestamp * 1000 : t.timestamp) : Date.now(),
+              signature: t.signature,
+            };
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[pumpTracker] Pump trade history query warning:', e);
+  }
+
+  // 2. Query PumpPortal trades cache
+  try {
+    const res = await fetch(`https://pumpportal.fun/api/trades?mint=${cleanMint}`);
+    if (res.ok) {
+      const trades = await res.json();
+      if (Array.isArray(trades)) {
+        for (const t of trades) {
+          const isBuy = t.txType === 'buy' || t.isBuy === true;
+          const solAmount = Number(t.solAmount || 0);
+          const userWallet = t.traderPublicKey || t.wallet;
+          if (isBuy && solAmount >= minSol && userWallet) {
+            return {
+              wallet: userWallet,
+              buyAmountSol: Number(solAmount.toFixed(2)),
+              timestamp: t.timestamp || Date.now(),
+              signature: t.signature || t.txHash,
+            };
+          }
+        }
+      }
+    }
+  } catch (e) {}
+
+  // 3. Query on-chain parsed transactions from Solana RPC
+  if (connection) {
+    try {
+      const pda = getBondingCurvePDA(cleanMint);
+      if (pda) {
+        const sigs = await connection.getSignaturesForAddress(pda, { limit: 15 });
+        if (sigs && sigs.length > 0) {
+          const txs = await connection.getParsedTransactions(sigs.slice(0, 8).map((s) => s.signature), {
+            maxSupportedTransactionVersion: 0,
+          });
+          for (const tx of txs) {
+            if (!tx || !tx.meta || tx.meta.err) continue;
+            const accountKeys = tx.transaction.message.accountKeys;
+            const feePayer = accountKeys[0]?.pubkey?.toBase58();
+            const preBal = tx.meta.preBalances[0];
+            const postBal = tx.meta.postBalances[0];
+            const solSpent = (preBal - postBal) / 1e9;
+            if (solSpent >= minSol && feePayer && !KNOWN_POOL_ADDRESSES.has(feePayer)) {
+              return {
+                wallet: feePayer,
+                buyAmountSol: Number(solSpent.toFixed(2)),
+                timestamp: tx.blockTime ? tx.blockTime * 1000 : Date.now(),
+                signature: tx.transaction.signatures[0],
+              };
+            }
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  return null;
+}
+

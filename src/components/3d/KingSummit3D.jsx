@@ -252,7 +252,7 @@ export function KingSummit3D({
           <div className="king-badge-header">
             <span className="king-badge-crown-icon">👑</span>
             <div className="king-badge-titles">
-              <span className="king-badge-realm-title">CURRENT KING OF THE MOUNTAIN</span>
+              <span className="king-badge-realm-title">CURRENT CROWN HOLDER</span>
               <span className="king-badge-wallet">
                 {formattedWallet} {crownedKing?.buyAmountSol ? `(🔥 ${crownedKing.buyAmountSol} SOL)` : ''}
               </span>

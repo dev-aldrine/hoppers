@@ -137,7 +137,7 @@ export function ChallengeKingModal({
         {/* Header */}
         <div className="launch-modal-header">
           <div className="launch-modal-title-group">
-            <span className="launch-modal-badge">👑 KING OF THE MOUNTAIN</span>
+            <span className="launch-modal-badge">👑 CROWNED</span>
             <h2 className="launch-modal-title">Dethrone & Claim The Crown</h2>
           </div>
           <button className="launch-modal-close-btn" onClick={onClose} aria-label="Close" disabled={isProcessing}>
