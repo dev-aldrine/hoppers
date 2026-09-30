@@ -73,6 +73,7 @@ export function WorldArena({
   accumulatedFeesSol = 0.5,
   fallenKings = [],
   onRemoveFallenKing,
+  isRealCA = false,
 }) {
   // High drifting clouds
   const clouds = useMemo(
@@ -120,6 +121,7 @@ export function WorldArena({
         timerSeconds={timerSeconds}
         timerDuration={timerDuration}
         accumulatedFeesSol={accumulatedFeesSol}
+        isRealCA={isRealCA}
       />
 
       {/* Clouds */}

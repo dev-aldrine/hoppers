@@ -257,6 +257,7 @@ export function Scene3D({
   timerSeconds = 60,
   timerDuration = 60,
   accumulatedFeesSol = 0.5,
+  isRealCA = false,
 }) {
   const followedHeadPos = useRef(new THREE.Vector3(0, 57.5, 0));
   const hasFollowTarget = useRef(false);
@@ -333,6 +334,7 @@ export function Scene3D({
               timerSeconds={timerSeconds}
               timerDuration={timerDuration}
               accumulatedFeesSol={accumulatedFeesSol}
+              isRealCA={isRealCA}
             />
           </group>
         </Suspense>

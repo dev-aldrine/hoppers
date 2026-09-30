@@ -65,17 +65,20 @@ export default function App() {
   const [isChallengeModalOpen, setIsChallengeModalOpen] = useState(false);
 
   // 👑 CROWNED: King of the Mountain State
+  const rawMint = settings.mintAddress ? settings.mintAddress.trim() : '';
+  const isRealCA = Boolean(rawMint && rawMint.length >= 32 && !rawMint.toLowerCase().includes('updating'));
+
   const [crownedKing, setCrownedKing] = useState(() => {
     try {
       const saved = localStorage.getItem('crowned_king_data');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.wallet && parsed.wallet.length >= 32 && !parsed.wallet.toLowerCase().includes('updating')) {
+          return parsed;
+        }
+      }
     } catch (e) {}
-    return {
-      id: 'init-king',
-      wallet: '3Pxv5rZVxFoBBFf57yE6opeyqqNbDWBGnB4TzvFBQwDN',
-      buyAmountSol: 0.25,
-      crownedAt: Date.now(),
-    };
+    return null;
   });
 
   const [timerSeconds, setTimerSeconds] = useState(60.0);
@@ -103,8 +106,13 @@ export default function App() {
     disconnectWallet,
   } = usePhantomAuth();
 
-  // ⏱️ 60-Second Countdown Timer Loop
+  // ⏱️ 60-Second Countdown Timer Loop (Only active when real CA & real King are present)
   useEffect(() => {
+    if (!isRealCA) {
+      setTimerSeconds(60.0);
+      return;
+    }
+
     const timerInterval = setInterval(() => {
       setTimerSeconds((prev) => {
         if (prev <= 0.15) {
@@ -117,7 +125,7 @@ export default function App() {
     }, 100);
 
     return () => clearInterval(timerInterval);
-  }, [crownedKing, accumulatedFeesSol]);
+  }, [crownedKing, accumulatedFeesSol, isRealCA]);
 
   const handleKingWin = () => {
     if (!crownedKing) return;
@@ -798,6 +806,7 @@ export default function App() {
         timerSeconds={timerSeconds}
         timerDuration={timerDuration}
         accumulatedFeesSol={accumulatedFeesSol}
+        isRealCA={isRealCA}
       />
 
       {/* 👑 Top Center CROWNED HUD */}

@@ -55,6 +55,7 @@ export function KingSummit3D({
   timerSeconds = 60,
   timerDuration = 60,
   accumulatedFeesSol = 0.5,
+  isRealCA = false,
 }) {
   const beamRef = useRef();
 
@@ -69,6 +70,7 @@ export function KingSummit3D({
   const isTimeLow = timerSeconds <= 15;
 
   const hasRealKing = Boolean(
+    isRealCA &&
     crownedKing &&
     crownedKing.wallet &&
     crownedKing.wallet.length >= 32 &&
@@ -77,7 +79,7 @@ export function KingSummit3D({
 
   const formattedWallet = hasRealKing
     ? `${crownedKing.wallet.slice(0, 4)}...${crownedKing.wallet.slice(-4)}`
-    : 'Waiting for King...';
+    : 'Last buyer (no timer)';
 
   return (
     <group position={summitPos}>

@@ -1,8 +1,8 @@
 {
   "adminWallet": "3Pxv5rZVxFoBBFf57yE6opeyqqNbDWBGnB4TzvFBQwDN",
-  "mintAddress": "Updating CA",
+  "mintAddress": "ffnDzpmDH6KwnZXkeY9BmakayNw3u7TqURvBDsPpump",
   "heliusApiKey": "4JqE6KecmNzSSYfHiWQ5g1rGqCACqYDsxHtcaqMfpump",
-  "solUsdPrice": 119.17,
+  "solUsdPrice": 119.19,
   "minSpawnSol": 0.01,
   "telegramUrl": "",
   "twitterUrl": "https://x.com/Growers_sol",
@@ -21,5 +21,5 @@
     8
   ],
   "prizePoolWinners": [],
-  "updatedAt": 1790790846277
+  "updatedAt": 1790791133009
 }
